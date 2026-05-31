@@ -18,6 +18,12 @@ class Settings(BaseSettings):
     # Comma-separated list of allowed frontend origins (e.g. for prod + previews)
     frontend_origin: str = "http://localhost:4321"
 
+    # Cookie security: set `cookie_secure=true` in production. Doing so flips
+    # the session cookie to SameSite=None + Secure (required when the frontend
+    # and backend are on different origins). Locally we use Lax/insecure so
+    # cookies still work over plain http://localhost.
+    cookie_secure: bool = False
+
     # Defaults to SQLite at backend/data/app.db. Production overrides with
     # a postgres:// URL (Render env var). SQLAlchemy handles the dialect.
     database_url: str = f"sqlite:///{DATA_DIR / 'app.db'}"

@@ -13,7 +13,9 @@ export default function LoginForm() {
     setSubmitting(true);
     try {
       await auth.login(username, password);
-      window.location.href = '/admin';
+      // /admin no longer exists — admin editing happens inline on the regular
+      // pages once the cookie is set. Send the user home.
+      window.location.href = '/';
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setError('Invalid credentials.');

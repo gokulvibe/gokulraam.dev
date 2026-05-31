@@ -31,18 +31,31 @@ def _serializer(secret: str) -> URLSafeTimedSerializer:
 
 def issue_session(response: Response, username: str, settings: Settings) -> None:
     token = _serializer(settings.session_secret).dumps({"u": username})
+    # Cross-origin in prod (frontend on Pages, backend on Render) → cookie
+    # must be SameSite=None + Secure, otherwise the browser silently refuses
+    # to store it. Locally (cookie_secure=false) we use Lax/insecure so dev
+    # over http://localhost keeps working.
+    samesite_value: str = "none" if settings.cookie_secure else "lax"
     response.set_cookie(
         SESSION_COOKIE,
         token,
         max_age=SESSION_MAX_AGE,
         httponly=True,
-        samesite="lax",
-        secure=False,  # set True behind HTTPS in prod
+        samesite=samesite_value,  # type: ignore[arg-type]
+        secure=settings.cookie_secure,
     )
 
 
 def clear_session(response: Response) -> None:
-    response.delete_cookie(SESSION_COOKIE)
+    # Must match the attributes used when setting the cookie or the browser
+    # won't delete it (some browsers compare SameSite/Secure on deletion).
+    settings = get_settings()
+    samesite_value: str = "none" if settings.cookie_secure else "lax"
+    response.delete_cookie(
+        SESSION_COOKIE,
+        samesite=samesite_value,  # type: ignore[arg-type]
+        secure=settings.cookie_secure,
+    )
 
 
 def _decode_session(session: str | None, settings: Settings) -> str | None:
