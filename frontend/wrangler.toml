@@ -1,0 +1,17 @@
+# Cloudflare Pages build settings.
+# Pages auto-detects most of this from package.json + astro.config.mjs, but
+# we set CF_PAGES=1 explicitly so the Astro adapter picks the cloudflare
+# adapter at build time instead of the node fallback.
+
+name = "gokulraam-dev"
+compatibility_date = "2026-01-15"
+
+# Build settings live in the Cloudflare Pages dashboard. For reference, set:
+#   Framework preset:     Astro
+#   Build command:        npm run build
+#   Build output:         dist
+#   Root directory:       frontend
+#   Environment vars:
+#     CF_PAGES               = 1
+#     PUBLIC_API_BASE        = https://gokulraam-backend.onrender.com   (← replace with your Render URL)
+#     NODE_VERSION           = 20

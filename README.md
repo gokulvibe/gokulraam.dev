@@ -2,7 +2,7 @@
 
 Personal site + dev portfolio for Gokul Raam.
 
-> **Docs**: [SPEC.md](./SPEC.md) — what this site is · [ROADMAP.md](./ROADMAP.md) — what's done, what's next
+> **Docs**: [SPEC.md](./SPEC.md) — what this site is · [ROADMAP.md](./ROADMAP.md) — what's done, what's next · [DEPLOY.md](./DEPLOY.md) — production deployment walkthrough
 
 ## Stack
 

@@ -1,11 +1,13 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, RedirectResponse
 
 from app.config import UPLOADS_DIR, get_settings
 from app.db import Base, engine
+from app.storage import R2Storage, get_storage
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
@@ -70,15 +72,38 @@ settings = get_settings()
 
 app = FastAPI(title="gokulraam.dev API", lifespan=lifespan)
 
+# Allow multiple frontend origins for prod + previews + local dev.
+# Comma-separated in env: "https://gokulraam.dev,https://*.pages.dev,http://localhost:4321"
+_allowed_origins = [o.strip() for o in settings.frontend_origin.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_origin],
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.mount("/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads")
+
+# Custom upload server: local-disk file response, OR 302-redirect to R2 public URL.
+# Single endpoint so the frontend URL shape stays stable across hosts.
+@app.get("/uploads/{path:path}")
+def serve_upload(path: str):
+    storage = get_storage()
+    if isinstance(storage, R2Storage):
+        url = storage.public_url(path)
+        if not url:
+            raise HTTPException(status_code=500, detail="R2 public URL not configured")
+        return RedirectResponse(url, status_code=302)
+    # Local disk
+    target = Path(UPLOADS_DIR / path)
+    if not target.exists() or not target.is_file():
+        raise HTTPException(status_code=404, detail="file not found")
+    # Make sure we're not serving outside UPLOADS_DIR (defence-in-depth)
+    try:
+        target.resolve().relative_to(UPLOADS_DIR.resolve())
+    except ValueError:
+        raise HTTPException(status_code=404, detail="file not found") from None
+    return FileResponse(target)
 
 app.include_router(auth.router, prefix="/api")
 app.include_router(til.router, prefix="/api")

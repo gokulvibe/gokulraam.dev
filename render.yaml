@@ -1,0 +1,38 @@
+# Render service definition. Lets you click "New from blueprint" instead of
+# clicking around the dashboard. Render reads this on every push.
+#
+# Free tier caveats baked into this config:
+#   - Single web service (free tier max)
+#   - No persistent disk (we deliberately don't request one)
+#   - Cold-start happens after 15 min of inactivity
+#
+# Secrets (ADMIN_PASSWORD_HASH, SESSION_SECRET, DATABASE_URL, R2_*) are NOT
+# in this file; set them via the Render dashboard once the service exists.
+
+services:
+  - type: web
+    name: gokulraam-backend
+    runtime: python
+    region: singapore     # closest free region to India
+    plan: free
+    rootDir: backend
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
+    healthCheckPath: /api/health
+    # Auto-deploy when main branch updates
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: ADMIN_USERNAME
+        value: gokul
+      # The rest are set as secrets in the dashboard:
+      #   ADMIN_PASSWORD_HASH
+      #   SESSION_SECRET
+      #   FRONTEND_ORIGIN
+      #   DATABASE_URL
+      #   R2_ACCOUNT_ID
+      #   R2_ACCESS_KEY_ID
+      #   R2_SECRET_ACCESS_KEY
+      #   R2_BUCKET
+      #   R2_PUBLIC_URL

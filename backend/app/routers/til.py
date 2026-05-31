@@ -1,4 +1,4 @@
-import shutil
+import io
 import uuid
 from pathlib import Path
 from typing import Annotated
@@ -9,11 +9,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.auth import current_admin, optional_admin
-from app.config import UPLOADS_DIR
 from app.db import get_db
 from app.markdown import render_markdown
 from app.models import TilAttachment, TilPost
 from app.schemas import TilAttachmentOut, TilPostCreate, TilPostOut, TilPostUpdate
+from app.storage import get_storage
 
 
 router = APIRouter(prefix="/til", tags=["til"])
@@ -144,7 +144,7 @@ def delete_attachment(
     att = db.get(TilAttachment, attachment_id)
     if not att:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "attachment not found")
-    Path(UPLOADS_DIR / att.stored_path).unlink(missing_ok=True)
+    get_storage().delete(att.stored_path)
     db.delete(att)
     db.commit()
 
@@ -162,17 +162,23 @@ async def upload_attachment(
 
     safe_name = Path(file.filename or "file").name
     stored_name = f"{post_id}-{uuid.uuid4().hex[:8]}-{safe_name}"
-    dest = UPLOADS_DIR / stored_name
 
+    # Buffer the upload in memory so we can size-check before writing to storage.
+    # 10 MB cap means buffering is cheap.
+    buf = io.BytesIO()
     size = 0
-    with dest.open("wb") as out:
-        while chunk := await file.read(64 * 1024):
-            size += len(chunk)
-            if size > MAX_UPLOAD_BYTES:
-                out.close()
-                dest.unlink(missing_ok=True)
-                raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "file too large")
-            out.write(chunk)
+    while chunk := await file.read(64 * 1024):
+        size += len(chunk)
+        if size > MAX_UPLOAD_BYTES:
+            raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "file too large")
+        buf.write(chunk)
+    buf.seek(0)
+
+    get_storage().save(
+        stored_name,
+        buf,
+        file.content_type or "application/octet-stream",
+    )
 
     att = TilAttachment(
         post_id=post_id,
