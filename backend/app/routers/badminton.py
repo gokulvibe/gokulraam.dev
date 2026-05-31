@@ -13,8 +13,9 @@ from sqlalchemy.orm import Session
 
 from app.auth import current_admin
 from app.db import get_db
-from app.models import BadmintonPlayer, BadmintonTournament
+from app.models import BadmintonMatch, BadmintonPlayer, BadmintonTournament
 from app.schemas import (
+    BadmintonMatchOut,
     BadmintonPlayerOut,
     BadmintonPlayerUpdate,
     BadmintonTournamentOut,
@@ -73,6 +74,25 @@ def update_tournament(
     db.commit()
     db.refresh(t)
     return t
+
+
+# ─── Matches (scraped) ───────────────────────────────────────────
+
+@router.get("/matches", response_model=list[BadmintonMatchOut])
+def list_matches(
+    db: Annotated[Session, Depends(get_db)],
+    player_id: int | None = None,
+    tournament_id: int | None = None,
+    status_filter: str | None = None,
+) -> list[BadmintonMatch]:
+    stmt = select(BadmintonMatch).order_by(BadmintonMatch.scheduled_at.asc().nulls_last())
+    if player_id is not None:
+        stmt = stmt.where(BadmintonMatch.player_id == player_id)
+    if tournament_id is not None:
+        stmt = stmt.where(BadmintonMatch.tournament_id == tournament_id)
+    if status_filter is not None:
+        stmt = stmt.where(BadmintonMatch.status == status_filter)
+    return list(db.scalars(stmt).all())
 
 
 # ─── Legacy compat ──────────────────────────────────────────────

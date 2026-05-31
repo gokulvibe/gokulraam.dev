@@ -197,3 +197,42 @@ export async function patchEntity(endpoint: string, field: string, value: string
     body: JSON.stringify({ [field]: value }),
   });
 }
+
+// ─── Search ─────────────────────────────────────────────────────
+
+export interface SearchHit {
+  group: string;
+  title: string;
+  subtitle: string;
+  href: string;
+  score: number;
+}
+export interface SearchResponse {
+  query: string;
+  hits: SearchHit[];
+}
+
+export const search = {
+  query: (q: string) =>
+    request<SearchResponse>(`/api/search?q=${encodeURIComponent(q)}`),
+};
+
+// ─── Live status ─────────────────────────────────────────────
+
+export interface LiveStatus {
+  state: string;
+  detail: string;
+  started_at: string;
+  last_seen_at: string;
+  age_seconds: number;
+  aliveness: 'live' | 'idle' | 'away';
+}
+
+export const status = {
+  get: () => request<LiveStatus>('/api/status'),
+  ping: (state: string, detail = '') =>
+    request<LiveStatus>('/api/status', {
+      method: 'POST',
+      body: JSON.stringify({ state, detail }),
+    }),
+};

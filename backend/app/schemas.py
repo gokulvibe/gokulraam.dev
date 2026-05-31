@@ -118,6 +118,9 @@ class BadmintonTournamentOut(BaseModel):
     dates: str
     location: str
     tier: str
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+    source_url: str = ""
     order: int
     updated_at: datetime
 
@@ -127,6 +130,20 @@ class BadmintonTournamentUpdate(BaseModel):
     dates: str | None = Field(default=None, max_length=60)
     location: str | None = Field(default=None, max_length=80)
     tier: str | None = Field(default=None, max_length=40)
+
+
+class BadmintonMatchOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    player_id: int
+    tournament_id: int
+    opponent: str
+    round: str
+    scheduled_at: datetime | None = None
+    status: str
+    score: str
+    updated_at: datetime
 
 
 # ─── Work / Projects ──────────────────────────────────────────
@@ -306,3 +323,23 @@ class SpecialtyItemUpdate(BaseModel):
     name: str | None = Field(default=None, max_length=80)
     gloss: str | None = Field(default=None, max_length=160)
     metric: str | None = Field(default=None, max_length=16)
+
+
+# ─── Status ping ──────────────────────────────────────────────
+
+
+class StatusOut(BaseModel):
+    """Public read shape. The server computes 'aliveness' so the client doesn't have to."""
+    state: str
+    detail: str
+    started_at: datetime
+    last_seen_at: datetime
+    age_seconds: int               # seconds since last_seen_at
+    aliveness: str                 # "live" | "idle" | "away"
+
+
+class StatusPingIn(BaseModel):
+    state: str = Field(min_length=1, max_length=40)
+    detail: str = Field(default="", max_length=200)
+    # If state is unchanged from the last ping, the server preserves started_at
+    # so durations make sense. If state changes, started_at resets.

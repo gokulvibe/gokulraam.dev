@@ -1,0 +1,44 @@
+# Hand-curated fallback that the scraper falls back to if the live scrape fails.
+# Edit this file when BWF announces new tournaments / player schedules and the
+# scraper is down (or temporarily broken because tournamentsoftware.com changed
+# its HTML).
+#
+# `dates` is what's shown on the page; `start_date`/`end_date` are used for
+# sorting and live-detection. Format: ISO 8601 date (YYYY-MM-DD).
+
+tournaments:
+  - slug: indonesia-open-2026
+    name: Indonesia Open
+    location: Jakarta
+    tier: Super 1000
+    dates: 02–07 Jun 2026
+    start_date: 2026-06-02
+    end_date: 2026-06-07
+
+  - slug: malaysia-masters-2026
+    name: Malaysia Masters
+    location: Kuala Lumpur
+    tier: Super 500
+    dates: 09–14 Jun 2026
+    start_date: 2026-06-09
+    end_date: 2026-06-14
+
+  - slug: us-open-2026
+    name: US Open
+    location: Council Bluffs
+    tier: Super 300
+    dates: 23–28 Jun 2026
+    start_date: 2026-06-23
+    end_date: 2026-06-28
+
+  - slug: canada-open-2026
+    name: Canada Open
+    location: Calgary
+    tier: Super 300
+    dates: 30 Jun – 05 Jul 2026
+    start_date: 2026-06-30
+    end_date: 2026-07-05
+
+# Match-level data is left empty by default — only the live scraper populates
+# matches when a tournament's draw is published.
+matches: []

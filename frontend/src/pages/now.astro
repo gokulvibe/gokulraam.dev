@@ -5,6 +5,7 @@ export const prerender = false;
 import Base from '@/layouts/Base.astro';
 import Card from '@/components/Card.astro';
 import EditableNowItem from '@/components/admin/EditableNowItem';
+import LiveStatus from '@/components/LiveStatus';
 
 const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8000';
 
@@ -52,6 +53,10 @@ const fmt = (d: Date) =>
     <p class="mt-6 max-w-xl text-mist">
       Inspired by <a href="https://nownownow.com" class="underline">nownownow.com</a>. A snapshot of present-tense Gokul.
     </p>
+
+    <div class="mt-8 max-w-md">
+      <LiveStatus client:load variant="card" />
+    </div>
   </header>
 
   {!backendOk && (

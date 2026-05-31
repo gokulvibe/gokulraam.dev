@@ -37,6 +37,16 @@ backend/data/uploads/*
 .idea
 .vscode
 
+# ─── Fonts (drop your TTFs in but don't commit licensed ones) ──
+backend/app/fonts/*.ttf
+backend/app/fonts/*.otf
+backend/app/fonts/*.woff*
+
+# ─── Audio (drop your ambient track in but don't commit big files) ──
+frontend/public/audio/*.mp3
+frontend/public/audio/*.m4a
+frontend/public/audio/*.ogg
+
 # ─── Misc ──────────────────────────────────────
 *.log
 tmp/

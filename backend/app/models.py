@@ -238,17 +238,40 @@ class BadmintonPlayer(Base):
 
 
 class BadmintonTournament(Base):
-    """Upcoming BWF tournaments. Dates kept as free-form strings for now;
-    Phase 3 (scraper) will replace this with structured DateTime fields."""
+    """Upcoming BWF tournaments. `dates` is a free-form display string the
+    admin can edit; `start_date`/`end_date` are populated (when known) by the
+    scraper and used for sorting + live-detection."""
     __tablename__ = "badminton_tournaments"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     slug: Mapped[str] = mapped_column(String(80), unique=True, index=True)
     name: Mapped[str] = mapped_column(String(120))
-    dates: Mapped[str] = mapped_column(String(60))     # "02–07 Jun 2026"
+    dates: Mapped[str] = mapped_column(String(60))         # "02–07 Jun 2026"
     location: Mapped[str] = mapped_column(String(80))
-    tier: Mapped[str] = mapped_column(String(40))      # "Super 1000", "Super 500"
+    tier: Mapped[str] = mapped_column(String(40))          # "Super 1000", "Super 500"
+    start_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    end_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    source_url: Mapped[str] = mapped_column(String(400), default="")  # set by scraper
     order: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+
+class BadmintonMatch(Base):
+    """One scraped match involving a tracked player. Refreshed daily.
+    Older completed matches are pruned by the scraper."""
+    __tablename__ = "badminton_matches"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    player_id: Mapped[int] = mapped_column(ForeignKey("badminton_players.id", ondelete="CASCADE"), index=True)
+    tournament_id: Mapped[int] = mapped_column(ForeignKey("badminton_tournaments.id", ondelete="CASCADE"), index=True)
+    opponent: Mapped[str] = mapped_column(String(200))
+    round: Mapped[str] = mapped_column(String(40), default="")    # R64, R32, R16, QF, SF, F
+    scheduled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="scheduled")  # scheduled|live|done
+    score: Mapped[str] = mapped_column(String(80), default="")    # e.g. "21-18 19-21 21-15"
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, onupdate=utcnow
@@ -272,6 +295,18 @@ class UsesItem(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, onupdate=utcnow
     )
+
+
+class StatusPing(Base):
+    """Single-row record holding the admin's latest 'currently' state.
+    Updated via POST /api/status (admin-only). Read by /api/status (public)."""
+    __tablename__ = "status_pings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    state: Mapped[str] = mapped_column(String(40))      # coding · court · reading · afk · etc.
+    detail: Mapped[str] = mapped_column(String(200), default="")
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class PageView(Base):

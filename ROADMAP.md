@@ -248,3 +248,8 @@ and removed the last separate-page admin friction.
 | 2026-05-29 | Phase 2.6: /badminton + homepage card editable (4 players + 4 tournaments). Introduced generic <EditableField> component. Documented multi-tenant vision (SPEC §10 + ROADMAP Phase 7+). |
 | 2026-05-29 | Phase 2.7: /work + /projects editable. 4 work_roles + 3 awards + 5 certs + 1 education + 4 projects (2 featured). EditableField extended with format='bullets'\|'chips'\|'longtext' for structured display. Homepage Work/Projects cards refactored to read from DB. |
 | 2026-05-29 | Phase 2.8: Profile + ProfileStat + SpecialtyItem tables. Homepage hero card 001 (face + detail) and /resume fully editable. **Every page on the site is now admin-editable.** |
+| 2026-05-31 | Phase 4.1: RSS feed at /til/rss.xml (auto-discovery via <link rel=alternate>). |
+| 2026-05-31 | Phase 4.2: OpenGraph image generator (/api/og/til/<slug>.png) — 1200×630 PNGs for share previews. Pillow + font-fallback chain. |
+| 2026-05-31 | Phase 4.3: cmd+k fuzzy search modal — backend /api/search aggregator over every editable surface; global React island with keyboard nav. |
+| 2026-05-31 | Phase 4.4: Live "currently" status — StatusPing model + POST/GET endpoints, /now card widget, scripts/status.py CLI client. |
+| 2026-05-31 | Phase 3: Badminton scraper foundation — BadmintonMatch model, structured start/end dates, tournamentsoftware.com scraper, YAML fallback, daily APScheduler cron. Migrator helper for ALTER TABLE additions. |
