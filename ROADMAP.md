@@ -156,10 +156,25 @@ and removed the last separate-page admin friction.
 
 ---
 
-## Phase 5 — Deployment ⏳
+## Phase 5 — Deployment ⏳ *(code-ready; awaiting dashboard steps in [DEPLOY.md](./DEPLOY.md))*
 
+**Target stack**: Render Free (backend) · Neon Postgres free · Cloudflare R2 (uploads) · Cloudflare Pages (frontend). Total cost: ₹0/mo + optional domain.
+
+### Code & config (done)
+- ✅ `psycopg2-binary` added to requirements; SQLAlchemy auto-picks Postgres from `DATABASE_URL`
+- ✅ `app/storage.py` — pluggable LocalDisk/R2 storage; R2 selected automatically when env vars are set
+- ✅ TIL upload/delete + `/uploads/<path>` endpoint use the storage abstraction
+- ✅ `@astrojs/cloudflare` adapter added; `astro.config.mjs` switches at build time via `CF_PAGES=1`
+- ✅ `render.yaml` Blueprint
+- ✅ `backend/.env.production.example` documents every required env var
+- ✅ `frontend/wrangler.toml` notes for Pages
+- ✅ `DEPLOY.md` step-by-step walkthrough (Neon → R2 → Render → Pages → CORS → smoke test → custom domain)
+
+### Dashboard steps (you)
+
+
+- ✅ **Backend host decision** — Render Free chosen (paired with Neon Postgres for persistence and R2 for files)
 - ❓ **Domain decision** — `gokulraam.dev` recommended (~₹1.5k/yr at Cloudflare)
-- ❓ **Backend host decision** — Hetzner CX11 (~₹360/mo) vs Oracle Always Free
 - ⏳ Buy domain at Cloudflare Registrar
 - ⏳ Connect GitHub repo to Cloudflare Pages → auto-deploy on push to `main`
 - ⏳ Spin up VPS or Oracle compute
@@ -254,3 +269,4 @@ and removed the last separate-page admin friction.
 | 2026-05-31 | Phase 4.4: Live "currently" status — StatusPing model + POST/GET endpoints, /now card widget, scripts/status.py CLI client. |
 | 2026-05-31 | Phase 3: Badminton scraper foundation — BadmintonMatch model, structured start/end dates, tournamentsoftware.com scraper, YAML fallback, daily APScheduler cron. Migrator helper for ALTER TABLE additions. |
 | 2026-05-31 | Phase 6.1: Light "Daylight" theme. Theme toggle (☼/☾) top-right, persisted in localStorage with no-flash pre-paint script. CSS variables drive both palettes. Casual home: minimal typographic landing for non-dev visitors (family/friends/elders). Profile.casual_about + casual_interests editable inline. AmbientPlayer for /audio/ambient.mp3. Footer adds ⌘K hint + rss link. |
+| 2026-05-31 | Phase 5 (code): production-deploy prep — psycopg2 + Postgres support, app/storage.py pluggable LocalDisk/R2 abstraction, Cloudflare adapter, render.yaml, .env.production.example, DEPLOY.md walkthrough. Dashboard steps pending. |
