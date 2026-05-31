@@ -2,6 +2,7 @@
 import '@/styles/globals.css';
 import AdminBar from '@/components/admin/AdminBar';
 import CmdK from '@/components/CmdK';
+import ThemeToggle from '@/components/ThemeToggle';
 interface Props {
   title?: string;
   description?: string;
@@ -25,6 +26,19 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://gokulraa
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate" type="application/rss+xml" title="Gokul Raam — Today I Learnt" href="/til/rss.xml" />
     <meta name="theme-color" content="#0b0b0f" />
+
+    <!-- Apply persisted theme BEFORE first paint so there's no flash. -->
+    <script is:inline>
+      (function () {
+        try {
+          var saved = localStorage.getItem('theme');
+          var theme = saved === 'light' || saved === 'dark' ? saved : 'dark';
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -78,14 +92,40 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://gokulraa
             <span class="text-gold">◇</span>
             <span>folio · mmxxvi · coimbatore</span>
           </div>
-          <div class="flex gap-5 font-mono text-[11px] uppercase tracking-[0.16em] text-mist">
+          <div class="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[11px] uppercase tracking-[0.16em] text-mist">
+            <button
+              type="button"
+              id="footer-cmdk"
+              class="hover:text-cream transition-colors inline-flex items-center gap-1.5 uppercase tracking-[0.16em]"
+              title="Open site-wide search"
+            >
+              <kbd class="rounded border border-rule px-1 py-0.5 text-[9.5px] leading-none text-cream">⌘K</kbd>
+              search
+            </button>
+            <a href="/til/rss.xml" class="hover:text-cream" title="Subscribe via RSS">rss</a>
+            <span class="hidden h-3 w-px bg-rule md:inline-block"></span>
             <a href="https://github.com/gokulvibe" class="hover:text-cream">github</a>
             <a href="https://linkedin.com/in/gokulraam" class="hover:text-cream">linkedin</a>
             <a href="mailto:dev.gokulraam@gmail.com" class="hover:text-cream">email</a>
           </div>
         </div>
       </footer>
+
+      <!-- Footer ⌘K button → fires the same chord CmdK listens for -->
+      <script is:inline>
+        document.getElementById('footer-cmdk')?.addEventListener('click', () => {
+          window.dispatchEvent(new KeyboardEvent('keydown', {
+            key: 'k',
+            metaKey: true,
+            ctrlKey: true,
+            bubbles: true,
+          }));
+        });
+      </script>
     </div>
+
+    <!-- Theme switcher — top-right of every page, works for everyone -->
+    <ThemeToggle client:load />
 
     <!-- cmd+k / ctrl+k search modal — works for everyone -->
     <CmdK client:load />

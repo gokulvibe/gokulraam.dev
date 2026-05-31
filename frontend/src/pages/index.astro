@@ -6,6 +6,7 @@ import Base from '@/layouts/Base.astro';
 import ExpandableCard from '@/components/ExpandableCard.astro';
 import EditableNowItem from '@/components/admin/EditableNowItem';
 import EditableField from '@/components/admin/EditableField';
+import AmbientPlayer from '@/components/AmbientPlayer';
 
 const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8000';
 
@@ -102,8 +103,67 @@ const fmtNow = (d: Date) =>
 ---
 
 <Base>
-  <!-- ─── HERO — single card, fills the viewport ─────────────── -->
-  <section class="reveal">
+  <!-- ═══════════════════════════════════════════════════════
+       CASUAL HOME — visible only in light "Daylight" theme.
+       For non-dev visitors. Minimal, friendly, typographic.
+       ═══════════════════════════════════════════════════════ -->
+  <section class="casual-home casual-only">
+    {profile && (
+      <>
+        <p class="casual-greeting">hi there —</p>
+        <h1>
+          I'm <span class="name">{profile.first_name}</span>.
+        </h1>
+
+        <p class="casual-about">
+          <EditableField
+            client:load
+            endpoint="/api/profile"
+            field="casual_about"
+            initial={profile.casual_about || `I work as a software engineer at ${profile.organization || 'a tech company'} in ${profile.location_short || 'India'}. Outside work, you'll usually find me on a badminton court or in the gym.`}
+            format="longtext"
+          />
+        </p>
+
+        <div class="casual-interests">
+          <p>a few things I love</p>
+          <ul>
+            {(profile.casual_interests || 'Badminton, Fitness, Reading').split(',').map((it) => it.trim()).filter(Boolean).map((it) => (
+              <li>{it}</li>
+            ))}
+          </ul>
+          {/* Admin gets an editable chip-cloud below to manage the list */}
+          <div class="mt-3">
+            <EditableField
+              client:load
+              endpoint="/api/profile"
+              field="casual_interests"
+              initial={profile.casual_interests}
+              format="chips"
+              placeholder="comma, separated, interests"
+            />
+          </div>
+        </div>
+
+        <p class="casual-contact">
+          <span>say hi —</span>
+          <a href={`mailto:${profile.email}`}>{profile.email}</a>
+        </p>
+
+        <AmbientPlayer client:load />
+
+        <p class="casual-flourish">
+          // looking for the dev version? toggle the ☼ button top-right.
+        </p>
+      </>
+    )}
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       FOLIO HOME — the existing rich dark experience.
+       Hidden in light mode.
+       ═══════════════════════════════════════════════════════ -->
+  <section class="folio-only reveal">
     <ExpandableCard
       number="001"
       variant="hero"
@@ -239,7 +299,7 @@ const fmtNow = (d: Date) =>
     </span>
   </div>
 
-  <section class="grid grid-cols-12 gap-3 md:gap-4">
+  <section class="grid grid-cols-12 gap-3 md:gap-4 folio-only">
 
     <!-- NOW -->
     <ExpandableCard
@@ -526,7 +586,7 @@ const fmtNow = (d: Date) =>
   </section>
 
   <!-- Footer flourish -->
-  <section class="mt-16 flex items-center justify-between border-t border-rule pt-6 reveal" style="animation-delay:0.7s">
+  <section class="mt-16 flex items-center justify-between border-t border-rule pt-6 reveal folio-only" style="animation-delay:0.7s">
     <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-ghost">
       end of folio &nbsp;·&nbsp; press <kbd class="rounded border border-rule px-1.5 py-0.5 text-cream">esc</kbd> to close any card
     </p>

@@ -372,6 +372,13 @@ _PROFILE = {
         "and fixing security hotspots. Have worked with Python, Redis, PostgreSQL, Celery."
     ),
     "skills_csv": "Python,FastAPI,Flask,Django,PostgreSQL,Redis,Celery,Pydantic,Pytest,SQLAlchemy,PySpark,Kafka",
+    # Plain-English bio for the "Daylight" light theme (non-dev visitors)
+    "casual_about": (
+        "I work as a software engineer at Saama in Coimbatore, where we build "
+        "tools for clinical research. Outside work, you'll usually find me on a "
+        "badminton court, in the gym, or with a book."
+    ),
+    "casual_interests": "Badminton, Fitness, Reading, Music",
 }
 
 _PROFILE_STATS: list[tuple[str, str, str, str]] = [
@@ -399,9 +406,17 @@ _SPECIALTIES: list[tuple[str, str, str, str]] = [
 def seed_profile() -> int:
     inserted = 0
     with SessionLocal() as db:
-        if db.get(Profile, 1) is None:
+        existing = db.get(Profile, 1)
+        if existing is None:
             db.add(Profile(id=1, **_PROFILE))
             inserted += 1
+        else:
+            # Backfill any newly-added field that's still empty on the existing
+            # row (so migrating to new schema fields doesn't require manual edit)
+            for key in ("casual_about", "casual_interests"):
+                if hasattr(existing, key) and not (getattr(existing, key) or "").strip():
+                    setattr(existing, key, _PROFILE.get(key, ""))
+                    inserted += 1
         if db.scalar(select(ProfileStat.id).limit(1)) is None:
             for order, (slug, label, primary, secondary) in enumerate(_PROFILE_STATS):
                 db.add(ProfileStat(slug=slug, label=label, primary=primary,

@@ -22,6 +22,9 @@ _COLUMN_ADDS: list[tuple[str, str, str]] = [
     ("badminton_tournaments", "start_date", "DATETIME"),
     ("badminton_tournaments", "end_date", "DATETIME"),
     ("badminton_tournaments", "source_url", "VARCHAR(400) DEFAULT ''"),
+    # Light theme — casual bio + interests
+    ("profile", "casual_about", "TEXT DEFAULT ''"),
+    ("profile", "casual_interests", "VARCHAR(300) DEFAULT ''"),
 ]
 
 

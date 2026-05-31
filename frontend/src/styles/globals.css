@@ -11,16 +11,49 @@
   :root {
     --ease-out-back: cubic-bezier(0.22, 1, 0.36, 1);
     --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+    /* Dark theme tokens (default). Overridden by [data-theme=light] below.
+       The Tailwind color names (void/smoke/cream/ember/gold/...) still resolve
+       via theme(), so existing components continue to work — but we ALSO expose
+       CSS variables for the few places we want to swap per-theme without
+       rewriting every class. */
+    --c-bg: #0b0b0f;
+    --c-bg-2: #16171f;
+    --c-surface: #1d1e28;
+    --c-text: #e9e2cf;
+    --c-text-2: #d8cfb6;
+    --c-text-muted: #8e8a7d;
+    --c-text-soft: #5a5852;
+    --c-accent: #ea580c;
+    --c-accent-2: #c9a96e;
+    --c-rule: rgba(201, 169, 110, 0.10);
+    --c-rule-strong: rgba(201, 169, 110, 0.22);
+  }
+
+  /* Light "Daylight" theme — calm parchment palette for casual viewers. */
+  [data-theme='light'] {
+    --c-bg: #f5efe4;
+    --c-bg-2: #ebe3d3;
+    --c-surface: #ffffff;
+    --c-text: #2f2a22;
+    --c-text-2: #4a4338;
+    --c-text-muted: #7a6f5e;
+    --c-text-soft: #aa9f8b;
+    --c-accent: #7a8c5c;          /* sage green — friendly, natural */
+    --c-accent-2: #c89665;         /* mild terracotta — warmth */
+    --c-rule: rgba(74, 67, 56, 0.12);
+    --c-rule-strong: rgba(74, 67, 56, 0.24);
   }
 
   html {
-    background: theme('colors.void');
-    color: theme('colors.cream');
+    background: var(--c-bg);
+    color: var(--c-text);
     font-family: theme('fontFamily.body');
     font-feature-settings: 'ss01', 'cv11', 'ss03';
     font-variation-settings: 'SOFT' 30, 'WONK' 0, 'opsz' 14;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    transition: background-color 0.5s ease, color 0.5s ease;
   }
 
   body {
@@ -29,8 +62,8 @@
   }
 
   ::selection {
-    background: theme('colors.ember');
-    color: theme('colors.void');
+    background: var(--c-accent);
+    color: var(--c-bg);
   }
 
   /* Scrollbar */
@@ -1385,6 +1418,299 @@ body { padding-bottom: 4rem; }
   color: theme('colors.parchment');
   font-style: italic;
   margin: 1.4em 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LIGHT THEME OVERRIDES — "Daylight"
+   For non-dev visitors (family, friends, recruiters quick-skim).
+   Recolors the dark Folio aesthetic onto a warm parchment palette,
+   keeps the same Fraunces typography, and turns OFF the noisy
+   atmospheric layers and game-card chrome.
+   ═══════════════════════════════════════════════════════════ */
+
+[data-theme='light'] body {
+  background: var(--c-bg);
+}
+
+/* Kill the atmospheric layers — too busy for a calm experience */
+[data-theme='light'] .atmosphere,
+[data-theme='light'] .grain,
+[data-theme='light'] .grid-veil {
+  display: none;
+}
+
+/* Soft daylight halo replaces the aurora */
+[data-theme='light'] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -10;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% -5%, rgba(200, 150, 101, 0.10), transparent 65%),
+    radial-gradient(ellipse 50% 40% at 100% 100%, rgba(122, 140, 92, 0.08), transparent 70%);
+}
+
+/* Header / nav recolor (uses dark color classes inline; swap via var) */
+[data-theme='light'] .text-cream { color: var(--c-text) !important; }
+[data-theme='light'] .text-parchment { color: var(--c-text-2) !important; }
+[data-theme='light'] .text-mist { color: var(--c-text-muted) !important; }
+[data-theme='light'] .text-ghost { color: var(--c-text-soft) !important; }
+[data-theme='light'] .text-ember { color: var(--c-accent-2) !important; }
+[data-theme='light'] .text-gold { color: var(--c-accent) !important; }
+[data-theme='light'] .text-rose { color: #b9472f !important; }
+[data-theme='light'] .text-sage { color: var(--c-accent) !important; }
+[data-theme='light'] .text-ink { color: var(--c-text) !important; }
+
+[data-theme='light'] .border-rule { border-color: var(--c-rule) !important; }
+[data-theme='light'] .divide-rule > * + * { border-color: var(--c-rule) !important; }
+[data-theme='light'] .bg-smoke,
+[data-theme='light'] .bg-smoke\/70,
+[data-theme='light'] .bg-smoke\/60,
+[data-theme='light'] .bg-smoke\/40,
+[data-theme='light'] .bg-smoke\/30 { background-color: var(--c-surface) !important; }
+[data-theme='light'] .bg-void { background-color: var(--c-bg) !important; }
+[data-theme='light'] .bg-ink { background-color: var(--c-bg-2) !important; }
+
+/* Cards on light theme: clean off-white with a subtle warm border */
+[data-theme='light'] .card {
+  background: var(--c-surface);
+  border-color: var(--c-rule);
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.5) inset,
+    0 8px 24px -16px rgba(74, 67, 56, 0.12);
+}
+[data-theme='light'] .card:hover {
+  border-color: var(--c-rule-strong);
+}
+
+/* Game-card system in light mode — hidden entirely. The light hero is a
+   separate, much simpler layout. */
+[data-theme='light'] .game-card { display: none !important; }
+[data-theme='light'] .folio-only { display: none !important; }
+
+/* Reciprocal: casual-only sections hidden on dark */
+[data-theme='dark'] .casual-only { display: none !important; }
+
+/* Scroll cue + folio divider — folio-only chrome */
+[data-theme='light'] .scroll-cue,
+[data-theme='light'] .folio-break { display: none !important; }
+
+/* AdminBar still works in light mode, just recolored */
+[data-theme='light'] .admin-bar {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--c-rule-strong);
+}
+[data-theme='light'] .admin-bar__btn { color: var(--c-text); }
+[data-theme='light'] .admin-bar__chip { color: var(--c-accent); }
+[data-theme='light'] .admin-bar__sep { background: var(--c-rule); }
+
+/* Chips */
+[data-theme='light'] .chip {
+  background: var(--c-bg-2);
+  border-color: var(--c-rule);
+  color: var(--c-text-muted);
+}
+[data-theme='light'] .chip-accent {
+  background: rgba(122, 140, 92, 0.12);
+  border-color: rgba(122, 140, 92, 0.35);
+  color: var(--c-accent);
+}
+
+/* CmdK on light — readable */
+[data-theme='light'] .cmdk-panel {
+  background: var(--c-surface);
+  border-color: var(--c-rule-strong);
+  box-shadow: 0 30px 80px -20px rgba(74, 67, 56, 0.25);
+}
+[data-theme='light'] .cmdk-hit-title { color: var(--c-text); }
+[data-theme='light'] .cmdk-hit-sub { color: var(--c-text-muted); }
+[data-theme='light'] .cmdk-hit.is-active .cmdk-hit-title { color: var(--c-accent); }
+
+/* Editable affordances on light */
+[data-theme='light'] .editable--admin:hover {
+  background: rgba(122, 140, 92, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(122, 140, 92, 0.25);
+}
+[data-theme='light'] .editable__pencil { color: var(--c-accent); }
+
+/* ─── Casual home — only visible in light mode ─────────────── */
+
+.casual-home {
+  display: none;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 4rem 0 3rem;
+}
+[data-theme='light'] .casual-home { display: block; }
+.casual-home h1 {
+  font-family: theme('fontFamily.display');
+  font-size: clamp(48px, 7vw, 84px);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--c-text);
+  font-variation-settings: 'SOFT' 30, 'opsz' 144;
+  margin: 0;
+}
+.casual-home h1 .name {
+  font-style: italic;
+  color: var(--c-accent);
+  font-variation-settings: 'SOFT' 80, 'opsz' 144;
+  display: inline-block;
+  position: relative;
+}
+.casual-home h1 .name::after {
+  /* Hand-drawn-looking underline */
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 6%;
+  bottom: 0.05em;
+  height: 0.18em;
+  background: var(--c-accent);
+  opacity: 0.22;
+  border-radius: 999px;
+  transform: rotate(-1.2deg);
+}
+.casual-home .casual-greeting {
+  font-family: theme('fontFamily.body');
+  font-size: 1rem;
+  color: var(--c-text-muted);
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+  margin-bottom: 0.5rem;
+}
+.casual-home .casual-about {
+  font-family: theme('fontFamily.body');
+  font-size: 1.225rem;
+  line-height: 1.7;
+  color: var(--c-text-2);
+  margin: 2.5rem 0;
+}
+.casual-home .casual-interests {
+  margin: 2.5rem 0;
+}
+.casual-home .casual-interests p {
+  font-family: theme('fontFamily.body');
+  font-size: 0.95rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--c-text-soft);
+  margin-bottom: 0.9rem;
+}
+.casual-home .casual-interests ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.4rem;
+  list-style: none;
+  padding: 0;
+}
+.casual-home .casual-interests li {
+  font-family: theme('fontFamily.display');
+  font-size: 1.15rem;
+  color: var(--c-text);
+  position: relative;
+  padding-left: 1.1rem;
+}
+.casual-home .casual-interests li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: var(--c-accent);
+  opacity: 0.7;
+}
+.casual-home .casual-contact {
+  margin: 3rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.7rem;
+  font-family: theme('fontFamily.body');
+  font-size: 1.05rem;
+  color: var(--c-text-2);
+}
+.casual-home .casual-contact a {
+  color: var(--c-accent);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: rgba(122, 140, 92, 0.4);
+}
+.casual-home .casual-contact a:hover {
+  text-decoration-color: var(--c-accent);
+}
+.casual-home .casual-flourish {
+  margin-top: 4rem;
+  font-family: theme('fontFamily.mono');
+  font-size: 11px;
+  color: var(--c-text-soft);
+  letter-spacing: 0.18em;
+  text-transform: lowercase;
+}
+
+/* ─── Theme toggle button (top-right of every page) ───────── */
+
+.theme-toggle {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 999px;
+  background: rgba(11, 11, 15, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(201, 169, 110, 0.18);
+  color: var(--c-text);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1.05rem;
+}
+[data-theme='light'] .theme-toggle {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(74, 67, 56, 0.18);
+  box-shadow: 0 2px 12px -4px rgba(74, 67, 56, 0.15);
+}
+.theme-toggle:hover {
+  transform: rotate(20deg);
+  border-color: var(--c-rule-strong);
+}
+
+/* ─── Ambient music player (light mode only) ──────────────── */
+
+.ambient-player {
+  display: none;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 2.5rem;
+  padding: 0.55rem 1rem;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--c-rule);
+  border-radius: 999px;
+  font-family: theme('fontFamily.body');
+  font-size: 0.9rem;
+  color: var(--c-text-2);
+  width: fit-content;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+[data-theme='light'] .ambient-player { display: inline-flex; }
+.ambient-player:hover {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: var(--c-rule-strong);
+}
+.ambient-player .ap-icon {
+  font-size: 1.1rem;
+  color: var(--c-accent);
+}
+.ambient-player .ap-state {
+  font-style: italic;
+  color: var(--c-text-muted);
 }
 
 /* Reduced motion */

@@ -253,3 +253,4 @@ and removed the last separate-page admin friction.
 | 2026-05-31 | Phase 4.3: cmd+k fuzzy search modal — backend /api/search aggregator over every editable surface; global React island with keyboard nav. |
 | 2026-05-31 | Phase 4.4: Live "currently" status — StatusPing model + POST/GET endpoints, /now card widget, scripts/status.py CLI client. |
 | 2026-05-31 | Phase 3: Badminton scraper foundation — BadmintonMatch model, structured start/end dates, tournamentsoftware.com scraper, YAML fallback, daily APScheduler cron. Migrator helper for ALTER TABLE additions. |
+| 2026-05-31 | Phase 6.1: Light "Daylight" theme. Theme toggle (☼/☾) top-right, persisted in localStorage with no-flash pre-paint script. CSS variables drive both palettes. Casual home: minimal typographic landing for non-dev visitors (family/friends/elders). Profile.casual_about + casual_interests editable inline. AmbientPlayer for /audio/ambient.mp3. Footer adds ⌘K hint + rss link. |

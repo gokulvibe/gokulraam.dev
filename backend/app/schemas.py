@@ -273,6 +273,8 @@ class ProfileOut(BaseModel):
     about_paragraph: str
     summary: str
     skills_csv: str
+    casual_about: str = ""
+    casual_interests: str = ""
 
 
 class ProfileUpdate(BaseModel):
@@ -291,6 +293,8 @@ class ProfileUpdate(BaseModel):
     about_paragraph: str | None = None
     summary: str | None = None
     skills_csv: str | None = Field(default=None, max_length=600)
+    casual_about: str | None = None
+    casual_interests: str | None = Field(default=None, max_length=300)
 
 
 class ProfileStatOut(BaseModel):

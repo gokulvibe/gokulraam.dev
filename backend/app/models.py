@@ -89,6 +89,11 @@ class Profile(Base):
     # Skills chip cloud (CSV)
     skills_csv: Mapped[str] = mapped_column(String(600), default="")
 
+    # Casual ("Daylight" theme) — plain-English bio for non-dev visitors
+    # and 3-4 interest words shown as bullets. Both editable inline.
+    casual_about: Mapped[str] = mapped_column(Text, default="")
+    casual_interests: Mapped[str] = mapped_column(String(300), default="")  # CSV
+
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, onupdate=utcnow
     )
