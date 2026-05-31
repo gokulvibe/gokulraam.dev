@@ -1,17 +1,27 @@
-# Cloudflare Pages build settings.
-# Pages auto-detects most of this from package.json + astro.config.mjs, but
-# we set CF_PAGES=1 explicitly so the Astro adapter picks the cloudflare
-# adapter at build time instead of the node fallback.
+# Cloudflare Workers Builds config for the Astro SSR app.
+#
+# Astro's Cloudflare adapter outputs:
+#   dist/_worker.js/index.js   ← the Worker entry
+#   dist/client/...            ← hashed static assets
+#   dist/<everything else>     ← prerendered pages + public/ files
+#
+# wrangler picks up _worker.js as the script and treats the rest of dist/
+# as the static-asset directory.
 
 name = "gokulraam-dev"
-compatibility_date = "2026-01-15"
+main = "./dist/_worker.js/index.js"
+compatibility_date = "2024-09-23"
 
-# Build settings live in the Cloudflare Pages dashboard. For reference, set:
-#   Framework preset:     Astro
-#   Build command:        npm run build
-#   Build output:         dist
-#   Root directory:       frontend
-#   Environment vars:
-#     CF_PAGES               = 1
-#     PUBLIC_API_BASE        = https://gokulraam-backend.onrender.com   (← replace with your Render URL)
-#     NODE_VERSION           = 20
+# Astro Cloudflare adapter needs Node-compatible APIs (Buffer, util, etc.)
+compatibility_flags = ["nodejs_compat"]
+
+# Tells Workers Builds where the static assets live.
+# `binding = "ASSETS"` lets the Worker fetch static files via env.ASSETS.fetch().
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+
+# Optional: don't try to bundle node_modules into the Worker (Astro already
+# did that during `astro build`). Keeps build fast and bundle small.
+[build]
+command = ""   # build runs as the dashboard's "Build command" — not from here.
