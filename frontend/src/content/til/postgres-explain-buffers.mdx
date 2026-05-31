@@ -1,0 +1,19 @@
+---
+title: "Postgres EXPLAIN ANALYZE lies about buffers unless you ask"
+date: 2026-05-28
+tags: [postgres, performance]
+---
+
+`EXPLAIN ANALYZE` shows timings but not I/O by default. To see what's actually
+being read from disk vs. cached, you need:
+
+```sql
+EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
+SELECT * FROM users WHERE email = 'x@y.com';
+```
+
+The `Buffers:` line tells you `shared hit=N read=N` — that "read" is your real
+disk I/O. A query that's "fast" in EXPLAIN can still hammer the disk if you
+don't check this.
+
+Pair with `track_io_timing = on` in `postgresql.conf` for actual I/O latency.

@@ -1,0 +1,15 @@
+---
+interface Props {
+  href?: string;
+  variant?: 'default' | 'dark' | 'accent';
+  class?: string;
+}
+const { href, variant = 'default', class: className = '' } = Astro.props;
+const base =
+  variant === 'dark' ? 'card bg-void' : variant === 'accent' ? 'card bg-ember/5 border-ember/20' : 'card';
+const Tag = href ? 'a' : 'div';
+---
+
+<Tag href={href} class={`${base} ${className} block`}>
+  <slot />
+</Tag>

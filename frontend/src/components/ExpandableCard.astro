@@ -1,0 +1,77 @@
+---
+interface Props {
+  number: string;
+  title?: string;            // prominent section name e.g. "WORK"
+  kicker?: string;           // italic descriptor below title
+  glyph?: string;
+  bar?: 'gold' | 'ember' | 'sage' | 'rose' | 'lilac';
+  class?: string;
+  hint?: string;
+  variant?: 'default' | 'hero';
+  watermark?: string;        // big background number/letter; defaults to `number`
+}
+const {
+  number,
+  title,
+  kicker,
+  glyph = '✦',
+  bar = 'gold',
+  class: className = '',
+  hint = 'tap to unfold',
+  variant = 'default',
+  watermark,
+} = Astro.props;
+
+const barColor: Record<string, string> = {
+  gold: '#c9a96e',
+  ember: '#ea580c',
+  sage: '#5a8a7a',
+  rose: '#b9472f',
+  lilac: '#9d88b8',
+};
+const barVar = `--card-bar: ${barColor[bar]};`;
+const mark = watermark ?? number;
+---
+
+<article
+  class={`game-card ${variant === 'hero' ? 'game-card--hero' : ''} ${className}`}
+  data-expandable
+  data-card-bar={bar}
+  style={barVar}
+>
+  <!-- Painted top edge in the card's type color -->
+  <span class="game-card__edge" aria-hidden></span>
+
+  <!-- Giant watermark of the card number (or override) -->
+  <span class="game-card__watermark" aria-hidden>{mark}</span>
+
+  <!-- Corner numerology + glyph -->
+  <span class="game-card__numeral">№ {number}</span>
+  <span class="game-card__glyph">{glyph}</span>
+
+  <div class="game-card__body">
+    {(title || kicker) && (
+      <header class="game-card__head">
+        {title && (
+          <h3 class="game-card__title">
+            <span class="game-card__title-bar" aria-hidden></span>
+            <span>{title}</span>
+          </h3>
+        )}
+        {kicker && <p class="game-card__kicker">{kicker}</p>}
+      </header>
+    )}
+
+    <div class="game-card__face">
+      <slot name="face" />
+    </div>
+
+    <div class="game-card__detail">
+      <slot name="detail" />
+    </div>
+  </div>
+
+  <span class="game-card__flourish-bl"></span>
+  <span class="game-card__flourish-br"></span>
+  <span class="game-card__hint">{hint} →</span>
+</article>

@@ -1,0 +1,115 @@
+---
+// SSR: fetch live from the API on every request so inline edits and newly-created
+// posts are visible immediately. No build-time path enumeration; any slug that
+// exists in the DB resolves here.
+export const prerender = false;
+
+import Base from '@/layouts/Base.astro';
+import EditableTitle from '@/components/admin/EditableTitle';
+import EditableTags from '@/components/admin/EditableTags';
+import EditableBody from '@/components/admin/EditableBody';
+import EditableAttachments from '@/components/admin/EditableAttachments';
+import PostStatusActions from '@/components/admin/PostStatusActions';
+
+const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8000';
+
+interface Attachment {
+  id: number;
+  filename: string;
+  mime_type: string;
+  size_bytes: number;
+  stored_path: string;
+}
+
+interface TilPost {
+  id: number;
+  slug: string;
+  title: string;
+  body_md: string;
+  body_html: string;
+  tags: string[];
+  draft: boolean;
+  created_at: string;
+  updated_at: string;
+  attachments: Attachment[];
+}
+
+const { slug } = Astro.params;
+const cookie = Astro.request.headers.get('cookie') ?? '';
+let post: TilPost | null = null;
+let backendOk = true;
+
+if (slug) {
+  try {
+    // Forward the visitor's cookie so the backend can distinguish admin vs guest.
+    // - Guest: drafts return 404 (kept private)
+    // - Admin: drafts return the post (so the edit/preview flow works)
+    const res = await fetch(`${API_BASE}/api/til/${slug}`, {
+      headers: cookie ? { cookie } : {},
+    });
+    if (res.ok) {
+      post = (await res.json()) as TilPost;
+    }
+  } catch {
+    backendOk = false;
+  }
+}
+
+if (!post && backendOk) {
+  return Astro.redirect('/til');
+}
+
+const fmt = (s: string) =>
+  new Date(s).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
+---
+
+<Base title={post ? `${post.title} — TIL` : 'TIL'} description={post?.title ?? 'TIL'}>
+  {
+    !backendOk && (
+      <div class="card border-rose/30 bg-rose/5">
+        <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-rose mb-2">
+          // backend offline
+        </p>
+        <p class="text-sm text-parchment">
+          The API at <code class="font-mono">{API_BASE}</code> is unreachable.
+        </p>
+      </div>
+    )
+  }
+
+  {
+    post && (
+      <article>
+        <a href="/til" class="font-mono text-xs text-mist hover:text-cream">
+          ← back to til
+        </a>
+
+        <PostStatusActions
+          client:load
+          postId={post.id}
+          postTitle={post.title}
+          initialDraft={post.draft}
+        />
+
+        <header class="mt-2 mb-10">
+          <div class="label mb-3">// {fmt(post.created_at)}</div>
+
+          <EditableTitle client:load postId={post.id} initial={post.title} />
+
+          <div class="mt-4">
+            <EditableTags client:load postId={post.id} initial={post.tags} />
+          </div>
+        </header>
+
+        <EditableBody
+          client:load
+          postId={post.id}
+          initialMd={post.body_md}
+          initialHtml={post.body_html}
+        />
+
+        <EditableAttachments client:load postId={post.id} initial={post.attachments} />
+      </article>
+    )
+  }
+</Base>

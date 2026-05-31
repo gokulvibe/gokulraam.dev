@@ -1,0 +1,42 @@
+# ─── Node / Astro ──────────────────────────────
+frontend/node_modules
+frontend/dist
+frontend/.astro
+frontend/.wrangler
+frontend/.vercel
+
+# ─── Python ─────────────────────────────────────
+backend/.venv
+backend/__pycache__
+backend/**/__pycache__
+backend/*.pyc
+backend/**/*.pyc
+backend/.pytest_cache
+backend/htmlcov
+backend/.coverage
+
+# ─── Local data (must never be committed) ──────
+backend/data/*.db
+backend/data/*.db-journal
+backend/data/*.db-wal
+backend/data/*.db-shm
+backend/data/uploads/*
+!backend/data/uploads/.gitkeep
+
+# ─── Secrets / env ─────────────────────────────
+.env
+.env.local
+.env.production
+.env.*.local
+
+# ─── OS / editors ──────────────────────────────
+.DS_Store
+*.swp
+*.swo
+*~
+.idea
+.vscode
+
+# ─── Misc ──────────────────────────────────────
+*.log
+tmp/

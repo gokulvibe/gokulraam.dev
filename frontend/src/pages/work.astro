@@ -1,0 +1,256 @@
+---
+export const prerender = false;
+
+import Base from '@/layouts/Base.astro';
+import Card from '@/components/Card.astro';
+import EditableField from '@/components/admin/EditableField';
+
+const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8000';
+
+interface Role {
+  id: number; slug: string; section: string;
+  title: string; organization: string; location: string;
+  dates: string; bullets: string; stack: string; link: string;
+  order: number;
+}
+interface Award {
+  id: number; slug: string; title: string; year: string;
+  organization: string; description: string; order: number;
+}
+interface Cert {
+  id: number; slug: string; name: string; issuer: string; order: number;
+}
+interface Edu {
+  id: number; slug: string; school: string; degree: string;
+  gpa: string; dates: string; coursework: string; note: string; order: number;
+}
+interface ProjectRow {
+  id: number; slug: string; title: string; year: string;
+  summary: string; stack: string; link: string; award_tag: string;
+  featured: boolean; order: number;
+}
+
+let roles: Role[] = [];
+let awards: Award[] = [];
+let certs: Cert[] = [];
+let education: Edu[] = [];
+let featuredProjects: ProjectRow[] = [];
+let backendOk = true;
+try {
+  const [r, a, c, e, p] = await Promise.all([
+    fetch(`${API_BASE}/api/work/roles`),
+    fetch(`${API_BASE}/api/work/awards`),
+    fetch(`${API_BASE}/api/work/certifications`),
+    fetch(`${API_BASE}/api/work/education`),
+    fetch(`${API_BASE}/api/projects?featured_only=true`),
+  ]);
+  if (r.ok) roles = await r.json(); else backendOk = false;
+  if (a.ok) awards = await a.json();
+  if (c.ok) certs = await c.json();
+  if (e.ok) education = await e.json();
+  if (p.ok) featuredProjects = await p.json();
+} catch {
+  backendOk = false;
+}
+
+const saamaRoles = roles.filter((r) => r.section === 'saama');
+const freelanceRoles = roles.filter((r) => r.section === 'freelance');
+---
+
+<Base title="Work — Gokul Raam" description="Backend engineering experience at Saama Technologies.">
+  <header class="mb-12">
+    <div class="label mb-4">// work experience</div>
+    <h1 class="display text-5xl md:text-6xl">Building APIs<br /><span class="italic text-ember">at scale.</span></h1>
+  </header>
+
+  {!backendOk && (
+    <div class="card border-rose/30 bg-rose/5 mb-8">
+      <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-rose mb-2">// backend offline</p>
+      <p class="text-sm text-parchment">The API at <code class="font-mono">{API_BASE}</code> is unreachable.</p>
+    </div>
+  )}
+
+  <!-- Saama roles -->
+  {saamaRoles.map((role) => (
+    <section class="mb-12">
+      <Card>
+        <div class="flex flex-col gap-2 md:flex-row md:items-baseline md:justify-between">
+          <div>
+            <h2 class="font-display text-3xl">
+              <EditableField client:load endpoint={`/api/work/roles/${role.id}`} field="title" initial={role.title} className="font-display" />
+            </h2>
+            <p class="mt-1 text-mist">
+              <EditableField client:load endpoint={`/api/work/roles/${role.id}`} field="organization" initial={role.organization} />
+              {role.location && (
+                <> · <EditableField client:load endpoint={`/api/work/roles/${role.id}`} field="location" initial={role.location} /></>
+              )}
+            </p>
+          </div>
+          <div class="font-mono text-sm text-mist">
+            <EditableField client:load endpoint={`/api/work/roles/${role.id}`} field="dates" initial={role.dates} className="font-mono" />
+          </div>
+        </div>
+
+        <div class="mt-6">
+          <EditableField client:load endpoint={`/api/work/roles/${role.id}`} field="bullets" initial={role.bullets} format="bullets" />
+        </div>
+
+        <div class="mt-6">
+          <EditableField client:load endpoint={`/api/work/roles/${role.id}`} field="stack" initial={role.stack} format="chips" />
+        </div>
+      </Card>
+    </section>
+  ))}
+
+  <!-- Freelance -->
+  {freelanceRoles.length > 0 && (
+    <section class="mb-12">
+      <div class="label mb-4">// freelance · pre-saama</div>
+      <div class="grid gap-4 md:grid-cols-2">
+        {freelanceRoles.map((role) => (
+          <Card>
+            <div class="flex flex-col gap-1 md:flex-row md:items-baseline md:justify-between">
+              <div>
+                <h3 class="font-display text-xl leading-tight">
+                  <EditableField client:load endpoint={`/api/work/roles/${role.id}`} field="organization" initial={role.organization} className="font-display" />
+                </h3>
+                <p class="mt-0.5 font-mono text-[11px] uppercase tracking-[0.14em] text-mist">
+                  <EditableField client:load endpoint={`/api/work/roles/${role.id}`} field="title" initial={role.title} className="font-mono" />
+                </p>
+              </div>
+              <span class="font-mono text-xs text-mist">
+                <EditableField client:load endpoint={`/api/work/roles/${role.id}`} field="dates" initial={role.dates} className="font-mono" />
+              </span>
+            </div>
+            <div class="mt-4 text-sm">
+              <EditableField client:load endpoint={`/api/work/roles/${role.id}`} field="bullets" initial={role.bullets} format="bullets" />
+            </div>
+            <div class="mt-4 flex flex-wrap items-center gap-2">
+              <EditableField client:load endpoint={`/api/work/roles/${role.id}`} field="stack" initial={role.stack} format="chips" />
+              {role.link && (
+                <a href={role.link} target="_blank" rel="noopener" class="chip-accent">visit ↗</a>
+              )}
+            </div>
+          </Card>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <!-- Awards -->
+  {awards.length > 0 && (
+    <section class="mb-12">
+      <div class="label mb-4">// awards & achievements</div>
+      <div class="grid gap-4 md:grid-cols-3">
+        {awards.map((a) => (
+          <Card variant="accent">
+            <div class="label !text-ember mb-2">
+              ★ <EditableField client:load endpoint={`/api/work/awards/${a.id}`} field="organization" initial={a.organization} className="font-mono" />
+              {a.year && <> · <EditableField client:load endpoint={`/api/work/awards/${a.id}`} field="year" initial={a.year} className="font-mono" /></>}
+            </div>
+            <p class="font-display text-xl leading-snug">
+              <EditableField client:load endpoint={`/api/work/awards/${a.id}`} field="title" initial={a.title} className="font-display" />
+            </p>
+            <p class="mt-3 text-sm text-cream/80">
+              <EditableField client:load endpoint={`/api/work/awards/${a.id}`} field="description" initial={a.description} format="longtext" />
+            </p>
+          </Card>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <!-- Selected Projects (from /projects, filtered by featured) -->
+  {featuredProjects.length > 0 && (
+    <section class="mb-12">
+      <div class="flex items-baseline justify-between mb-4">
+        <div class="label">// selected projects</div>
+        <a href="/projects" class="font-mono text-[11px] uppercase tracking-[0.14em] text-ember hover:opacity-80">
+          full catalogue →
+        </a>
+      </div>
+      <div class="grid gap-3 md:grid-cols-2">
+        {featuredProjects.map((p) => (
+          <div class="mini-tile">
+            <div class="flex items-baseline justify-between gap-3">
+              <h4 class="font-display text-lg">
+                <EditableField client:load endpoint={`/api/projects/${p.id}`} field="title" initial={p.title} className="font-display" />
+              </h4>
+              <span class="font-mono text-[10.5px] uppercase tracking-[0.16em] text-mist">
+                <EditableField client:load endpoint={`/api/projects/${p.id}`} field="year" initial={p.year} className="font-mono" />
+              </span>
+            </div>
+            <p class="mt-2 text-sm leading-relaxed text-cream/80">
+              <EditableField client:load endpoint={`/api/projects/${p.id}`} field="summary" initial={p.summary} format="longtext" />
+            </p>
+            <div class="mt-3 flex flex-wrap items-center gap-2">
+              <EditableField client:load endpoint={`/api/projects/${p.id}`} field="stack" initial={p.stack} format="chips" />
+              {p.link && (
+                <a href={p.link} target="_blank" rel="noopener" class="chip-accent">
+                  {p.link.includes('github') ? 'github ↗' : 'live ↗'}
+                </a>
+              )}
+              {p.award_tag && (
+                <span class="chip-accent">
+                  <EditableField client:load endpoint={`/api/projects/${p.id}`} field="award_tag" initial={p.award_tag} className="font-mono" />
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <!-- Certifications -->
+  {certs.length > 0 && (
+    <section class="mb-12">
+      <div class="label mb-4">// certifications</div>
+      <div class="grid grid-cols-2 gap-2 md:grid-cols-5">
+        {certs.map((c) => (
+          <div class="mini-tile text-center">
+            <p class="font-display text-base">
+              <EditableField client:load endpoint={`/api/work/certifications/${c.id}`} field="name" initial={c.name} className="font-display" />
+            </p>
+            <p class="mt-1 font-mono text-[9.5px] uppercase tracking-[0.18em] text-mist">
+              <EditableField client:load endpoint={`/api/work/certifications/${c.id}`} field="issuer" initial={c.issuer} className="font-mono" />
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <!-- Education -->
+  {education.map((e) => (
+    <section>
+      <div class="label mb-4">// education</div>
+      <Card>
+        <div class="flex flex-col gap-2 md:flex-row md:items-baseline md:justify-between">
+          <div>
+            <h3 class="font-display text-2xl">
+              <EditableField client:load endpoint={`/api/work/education/${e.id}`} field="school" initial={e.school} className="font-display" />
+            </h3>
+            <p class="mt-1 text-mist">
+              <EditableField client:load endpoint={`/api/work/education/${e.id}`} field="degree" initial={e.degree} />
+              {e.gpa && (
+                <> · GPA <EditableField client:load endpoint={`/api/work/education/${e.id}`} field="gpa" initial={e.gpa} /></>
+              )}
+            </p>
+          </div>
+          <div class="font-mono text-sm text-mist">
+            <EditableField client:load endpoint={`/api/work/education/${e.id}`} field="dates" initial={e.dates} className="font-mono" />
+          </div>
+        </div>
+        {e.note && (
+          <p class="mt-4 text-sm text-cream/70">
+            <EditableField client:load endpoint={`/api/work/education/${e.id}`} field="note" initial={e.note} format="longtext" />
+          </p>
+        )}
+        <div class="mt-4">
+          <EditableField client:load endpoint={`/api/work/education/${e.id}`} field="coursework" initial={e.coursework} format="chips" />
+        </div>
+      </Card>
+    </section>
+  ))}
+</Base>

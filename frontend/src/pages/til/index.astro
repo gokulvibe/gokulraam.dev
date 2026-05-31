@@ -1,0 +1,95 @@
+---
+// SSR so the published list reflects DB edits and new posts immediately.
+export const prerender = false;
+
+import Base from '@/layouts/Base.astro';
+import Card from '@/components/Card.astro';
+import AdminTilSection from '@/components/admin/AdminTilSection';
+import AdminTilRowAction from '@/components/admin/AdminTilRowAction';
+
+const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8000';
+
+interface TilPost {
+  id: number;
+  slug: string;
+  title: string;
+  tags: string[];
+  draft: boolean;
+  created_at: string;
+}
+
+// Always show only published posts here (guest-safe). Admin drafts surface via
+// the AdminTilSection island which fetches with credentials.
+let posts: TilPost[] = [];
+let backendOk = true;
+try {
+  const res = await fetch(`${API_BASE}/api/til`);
+  if (res.ok) posts = (await res.json()) as TilPost[];
+  else backendOk = false;
+} catch {
+  backendOk = false;
+}
+
+const fmt = (s: string) =>
+  new Date(s).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
+---
+
+<Base title="Today I Learnt — Gokul Raam" description="A microblog of small things learned.">
+  <header class="mb-12">
+    <div class="label mb-4">// today i learnt</div>
+    <h1 class="display text-5xl md:text-6xl">
+      Small things,<br /><span class="italic text-ember">learned daily.</span>
+    </h1>
+    <p class="mt-6 max-w-xl text-mist">
+      Bite-sized notes from working with Python, Postgres, Redis, and whatever else
+      is biting me this week.
+    </p>
+  </header>
+
+  {
+    !backendOk && (
+      <div class="card border-rose/30 bg-rose/5 text-cream mb-8">
+        <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-rose mb-2">
+          // backend offline
+        </p>
+        <p class="text-sm text-parchment">
+          The TIL API at <code class="font-mono">{API_BASE}/api/til</code> is unreachable.
+          Start the backend with <code class="font-mono">make backend</code>.
+        </p>
+      </div>
+    )
+  }
+
+  <!-- Admin-only sections (drafts + quick-create). Invisible to visitors. -->
+  <AdminTilSection client:load />
+
+  {backendOk && posts.length === 0 && (
+    <p class="text-mist">No entries yet.</p>
+  )}
+
+  <div class="space-y-4">
+    {
+      posts.map((post, i) => (
+        <div class="relative">
+          <Card href={`/til/${post.slug}`}>
+            <div class="flex items-baseline justify-between gap-4 mb-2">
+              <span class="label">// til #{String(posts.length - i).padStart(3, '0')}</span>
+              <span class="font-mono text-xs text-mist">{fmt(post.created_at)}</span>
+            </div>
+            <h2 class="font-display text-2xl leading-snug">{post.title}</h2>
+            {post.tags.length > 0 && (
+              <div class="mt-3 flex flex-wrap gap-2">
+                {post.tags.map((t) => (
+                  <span class="chip">#{t}</span>
+                ))}
+              </div>
+            )}
+          </Card>
+          <div class="absolute top-3 right-4">
+            <AdminTilRowAction client:load post={{ id: post.id, title: post.title }} />
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</Base>

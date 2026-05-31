@@ -1,0 +1,27 @@
+---
+title: "FastAPI Depends() doesn't cache across requests"
+date: 2026-05-26
+tags: [fastapi, python]
+---
+
+Took me a minute. `Depends()` deduplicates within a single request — if two
+endpoints in a chain both depend on `get_db()`, it's resolved once. But the
+*next* request gets a fresh resolution.
+
+That's a feature: per-request DB sessions are what you want. But if you
+expected app-wide singleton behavior (config, cached HTTP client), use a
+module-level instance or `lru_cache`:
+
+```python
+from functools import lru_cache
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+# Then in routes:
+def handler(settings: Annotated[Settings, Depends(get_settings)]):
+    ...
+```
+
+`lru_cache` makes `get_settings` a singleton; `Depends` happily reuses it.

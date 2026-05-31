@@ -1,0 +1,30 @@
+---
+import '@/styles/globals.css';
+import LoginForm from '@/components/admin/LoginForm';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign in · gokulraam.dev</title>
+    <meta name="robots" content="noindex,nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#0b0b0f" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..700,30..100;1,9..144,300..700,30..100&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="font-body">
+    <div class="atmosphere"></div>
+    <div class="grain"></div>
+
+    <main class="flex min-h-screen items-center justify-center px-6 py-10">
+      <LoginForm client:load />
+    </main>
+  </body>
+</html>

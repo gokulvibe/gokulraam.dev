@@ -1,0 +1,82 @@
+---
+// SSR so admin edits show on refresh.
+export const prerender = false;
+
+import Base from '@/layouts/Base.astro';
+import Card from '@/components/Card.astro';
+import EditableNowItem from '@/components/admin/EditableNowItem';
+
+const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8000';
+
+interface NowApiItem {
+  slug: string;
+  label: string;
+  value: string;
+  order: number;
+  updated_at: string;
+}
+
+let items: NowApiItem[] = [];
+let backendOk = true;
+try {
+  const res = await fetch(`${API_BASE}/api/now`);
+  if (res.ok) items = await res.json();
+  else backendOk = false;
+} catch {
+  backendOk = false;
+}
+
+// Drop the "headline" — that's used on the homepage card face only.
+const facets = items.filter((i) => i.slug !== 'headline').sort((a, b) => a.order - b.order);
+
+const lastUpdate = items.length
+  ? new Date(
+      items.reduce(
+        (max, i) => (new Date(i.updated_at) > max ? new Date(i.updated_at) : max),
+        new Date(0),
+      ),
+    )
+  : null;
+const fmt = (d: Date) =>
+  d.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }).toLowerCase();
+---
+
+<Base title="Now — Gokul Raam" description="What I'm currently working on, reading, watching.">
+  <header class="mb-12">
+    <div class="label mb-4">
+      // now {lastUpdate ? `· updated ${fmt(lastUpdate)}` : ''}
+    </div>
+    <h1 class="display text-5xl md:text-6xl">
+      What I'm doing<br /><span class="italic text-ember">right now.</span>
+    </h1>
+    <p class="mt-6 max-w-xl text-mist">
+      Inspired by <a href="https://nownownow.com" class="underline">nownownow.com</a>. A snapshot of present-tense Gokul.
+    </p>
+  </header>
+
+  {!backendOk && (
+    <div class="card border-rose/30 bg-rose/5 text-cream mb-8">
+      <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-rose mb-2">// backend offline</p>
+      <p class="text-sm text-parchment">
+        The API at <code class="font-mono">{API_BASE}</code> is unreachable.
+      </p>
+    </div>
+  )}
+
+  <div class="grid gap-5 md:grid-cols-2">
+    {facets.map((item) => (
+      <Card>
+        <div class="label mb-3">// {item.label}</div>
+        <p class="font-display text-xl leading-snug">
+          <EditableNowItem
+            client:load
+            slug={item.slug}
+            initial={item.value}
+            multiline
+            className="font-display"
+          />
+        </p>
+      </Card>
+    ))}
+  </div>
+</Base>

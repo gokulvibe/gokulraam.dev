@@ -1,0 +1,188 @@
+---
+// SSR so admin edits show on refresh.
+export const prerender = false;
+
+import Base from '@/layouts/Base.astro';
+import Card from '@/components/Card.astro';
+import EditableField from '@/components/admin/EditableField';
+
+const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8000';
+
+interface Player {
+  id: number;
+  slug: string;
+  name: string;
+  country: string;
+  flag: string;
+  discipline: string;
+  next_event: string;
+  order: number;
+}
+
+interface Tournament {
+  id: number;
+  slug: string;
+  name: string;
+  dates: string;
+  location: string;
+  tier: string;
+  order: number;
+}
+
+let players: Player[] = [];
+let tournaments: Tournament[] = [];
+let backendOk = true;
+try {
+  const [pRes, tRes] = await Promise.all([
+    fetch(`${API_BASE}/api/badminton/players`),
+    fetch(`${API_BASE}/api/badminton/tournaments`),
+  ]);
+  if (pRes.ok) players = await pRes.json();
+  else backendOk = false;
+  if (tRes.ok) tournaments = await tRes.json();
+} catch {
+  backendOk = false;
+}
+---
+
+<Base title="Badminton — Gokul Raam" description="Following the BWF tour.">
+  <header class="mb-12">
+    <div class="label mb-4">// badminton</div>
+    <h1 class="display text-5xl md:text-6xl">
+      Following the<br /><span class="italic text-ember">BWF tour.</span>
+    </h1>
+    <p class="mt-6 max-w-xl text-mist">
+      Players I follow + upcoming tournaments. Live match data coming once
+      the backend scraper ships (Phase 3).
+    </p>
+  </header>
+
+  {!backendOk && (
+    <div class="card border-rose/30 bg-rose/5 mb-8">
+      <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-rose mb-2">// backend offline</p>
+      <p class="text-sm text-parchment">The API at <code class="font-mono">{API_BASE}</code> is unreachable.</p>
+    </div>
+  )}
+
+  <section class="mb-12">
+    <div class="label mb-4">// favorite players</div>
+    <div class="grid gap-3 md:grid-cols-2">
+      {players.map((p) => (
+        <Card>
+          <div class="flex items-start gap-4">
+            <span class="text-3xl leading-none">
+              <EditableField
+                client:load
+                endpoint={`/api/badminton/players/${p.id}`}
+                field="flag"
+                initial={p.flag}
+                placeholder="🇮🇳"
+              />
+            </span>
+            <div class="flex-1 min-w-0">
+              <p class="font-display text-xl leading-tight">
+                <EditableField
+                  client:load
+                  endpoint={`/api/badminton/players/${p.id}`}
+                  field="name"
+                  initial={p.name}
+                  className="font-display"
+                  placeholder="Player name"
+                />
+              </p>
+              <p class="mt-1 font-mono text-[11px] uppercase tracking-[0.16em] text-mist">
+                <EditableField
+                  client:load
+                  endpoint={`/api/badminton/players/${p.id}`}
+                  field="country"
+                  initial={p.country}
+                  className="font-mono"
+                  placeholder="IND"
+                />
+                <span> · </span>
+                <EditableField
+                  client:load
+                  endpoint={`/api/badminton/players/${p.id}`}
+                  field="discipline"
+                  initial={p.discipline}
+                  className="font-mono"
+                  placeholder="Men's Singles"
+                />
+              </p>
+              <p class="mt-3 font-mono text-[11px] uppercase tracking-[0.14em] text-ember">
+                <span class="text-mist">next →</span>
+                {' '}
+                <EditableField
+                  client:load
+                  endpoint={`/api/badminton/players/${p.id}`}
+                  field="next_event"
+                  initial={p.next_event}
+                  className="font-mono"
+                  placeholder="Tournament · 02 Jun"
+                />
+              </p>
+            </div>
+          </div>
+        </Card>
+      ))}
+    </div>
+    <p class="mt-4 font-mono text-[11px] uppercase tracking-[0.14em] text-ghost">
+      // match-level data is currently hand-curated. live scraping → v2.
+    </p>
+  </section>
+
+  <section>
+    <div class="label mb-4">// upcoming tournaments</div>
+    <div class="space-y-3">
+      {tournaments.map((t) => (
+        <Card>
+          <div class="flex flex-col gap-2 md:flex-row md:items-baseline md:justify-between">
+            <div class="flex-1 min-w-0">
+              <p class="font-display text-2xl">
+                <EditableField
+                  client:load
+                  endpoint={`/api/badminton/tournaments/${t.id}`}
+                  field="name"
+                  initial={t.name}
+                  className="font-display"
+                  placeholder="Tournament name"
+                />
+              </p>
+              <p class="mt-1 text-mist">
+                <EditableField
+                  client:load
+                  endpoint={`/api/badminton/tournaments/${t.id}`}
+                  field="location"
+                  initial={t.location}
+                  placeholder="City"
+                />
+              </p>
+            </div>
+            <div class="flex flex-col items-start gap-1 md:items-end">
+              <span class="chip-accent">
+                <EditableField
+                  client:load
+                  endpoint={`/api/badminton/tournaments/${t.id}`}
+                  field="tier"
+                  initial={t.tier}
+                  className="font-mono"
+                  placeholder="Super 1000"
+                />
+              </span>
+              <span class="font-mono text-xs text-mist">
+                <EditableField
+                  client:load
+                  endpoint={`/api/badminton/tournaments/${t.id}`}
+                  field="dates"
+                  initial={t.dates}
+                  className="font-mono"
+                  placeholder="02–07 Jun 2026"
+                />
+              </span>
+            </div>
+          </div>
+        </Card>
+      ))}
+    </div>
+  </section>
+</Base>

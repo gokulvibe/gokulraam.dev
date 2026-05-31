@@ -1,0 +1,1161 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────
+   NOCTURNAL COLLECTOR'S FOLIO
+   A dark TCG-folio aesthetic for a backend engineer's portfolio.
+   ───────────────────────────────────────────────────────────── */
+
+@layer base {
+  :root {
+    --ease-out-back: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  }
+
+  html {
+    background: theme('colors.void');
+    color: theme('colors.cream');
+    font-family: theme('fontFamily.body');
+    font-feature-settings: 'ss01', 'cv11', 'ss03';
+    font-variation-settings: 'SOFT' 30, 'WONK' 0, 'opsz' 14;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: theme('colors.ember');
+    color: theme('colors.void');
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: theme('colors.ink'); }
+  ::-webkit-scrollbar-thumb {
+    background: theme('colors.bone');
+    border: 2px solid theme('colors.ink');
+    border-radius: 8px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: theme('colors.goldDim'); }
+}
+
+/* ─── Background atmosphere ───────────────────────────────── */
+
+.atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(234, 88, 12, 0.045), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(43, 79, 117, 0.05), transparent 60%),
+    theme('colors.void');
+}
+
+.atmosphere::before,
+.atmosphere::after {
+  content: '';
+  position: absolute;
+  filter: blur(60px);
+  will-change: transform;
+}
+
+.atmosphere::before {
+  top: -25%;
+  right: -15%;
+  width: 70vw;
+  height: 70vh;
+  background: radial-gradient(circle at center, rgba(234, 88, 12, 0.10), transparent 60%);
+  animation: theme('animation.drift-a');
+}
+
+.atmosphere::after {
+  bottom: -30%;
+  left: -15%;
+  width: 80vw;
+  height: 70vh;
+  background: radial-gradient(circle at center, rgba(157, 136, 184, 0.08), transparent 60%);
+  animation: theme('animation.drift-b');
+}
+
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: -5;
+  pointer-events: none;
+  opacity: 0.055;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.7'/></svg>");
+}
+
+.grid-veil {
+  position: fixed;
+  inset: 0;
+  z-index: -4;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(201, 169, 110, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201, 169, 110, 0.018) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 90%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 90%);
+}
+
+/* ─── Typography utilities ────────────────────────────────── */
+
+@layer components {
+  .display {
+    font-family: theme('fontFamily.display');
+    font-weight: 500;
+    letter-spacing: theme('letterSpacing.tightest');
+    line-height: 0.92;
+    font-variation-settings: 'SOFT' 30, 'opsz' 144;
+  }
+  .display-italic {
+    font-style: italic;
+    font-variation-settings: 'SOFT' 80, 'opsz' 144;
+  }
+  .label {
+    font-family: theme('fontFamily.mono');
+    font-size: 10.5px;
+    letter-spacing: theme('letterSpacing.widest2');
+    text-transform: uppercase;
+    color: theme('colors.mist');
+  }
+  .flourish {
+    color: theme('colors.gold');
+    font-family: theme('fontFamily.display');
+    font-style: italic;
+    font-variation-settings: 'SOFT' 80;
+  }
+
+  /* Standard non-game cards (used in /work, /projects, etc.) */
+  .card {
+    @apply relative rounded-md border border-rule bg-smoke/70 backdrop-blur-sm p-7;
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.03),
+      0 1px 0 0 rgba(0, 0, 0, 0.4),
+      0 12px 30px -20px rgba(0, 0, 0, 0.6);
+    transition: border-color 0.3s ease, transform 0.3s var(--ease-out-back),
+      box-shadow 0.3s ease;
+  }
+  .card:hover {
+    border-color: theme('colors.ruleStrong');
+    transform: translateY(-2px);
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-rule px-2.5 py-1 font-mono text-[10.5px] uppercase tracking-[0.12em] text-mist;
+  }
+  .chip-accent {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-ember/30 bg-ember/10 px-2.5 py-1 font-mono text-[10.5px] uppercase tracking-[0.12em] text-ember;
+  }
+
+  /* ─── Specialty tile — floating ability grid ──────────────── */
+  .specialty {
+    position: relative;
+    border: 1px solid theme('colors.rule');
+    border-radius: 8px;
+    padding: 1.1rem 1.2rem;
+    background: rgba(255, 255, 255, 0.012);
+    transition:
+      border-color 0.3s ease,
+      transform 0.3s var(--ease-out-back),
+      background 0.3s ease;
+    overflow: hidden;
+  }
+  .specialty:hover {
+    border-color: theme('colors.ruleStrong');
+    background: rgba(255, 255, 255, 0.022);
+    transform: translateY(-1px);
+  }
+  .specialty::before {
+    content: '';
+    position: absolute;
+    top: 0.6rem;
+    left: 0;
+    width: 2px;
+    height: 1.1rem;
+    background: theme('colors.gold');
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: 2px;
+  }
+  .specialty:hover::before {
+    opacity: 0.7;
+  }
+  .specialty__name {
+    display: block;
+    font-family: theme('fontFamily.display');
+    font-size: 1.05rem;
+    line-height: 1.1;
+    color: theme('colors.cream');
+    letter-spacing: -0.005em;
+  }
+  .specialty__gloss {
+    display: block;
+    margin-top: 0.4rem;
+    font-family: theme('fontFamily.mono');
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    color: theme('colors.mist');
+    text-transform: lowercase;
+  }
+  .specialty__metric {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.9rem;
+    font-family: theme('fontFamily.display');
+    font-style: italic;
+    font-size: 0.95rem;
+    color: theme('colors.ember');
+    opacity: 0.65;
+  }
+
+  /* ─── Mini tile — for /work freelance, projects, certs ───── */
+  .mini-tile {
+    @apply relative rounded-md border border-rule p-4 transition-all;
+    background: rgba(255, 255, 255, 0.012);
+  }
+  .mini-tile:hover {
+    @apply border-ruleStrong;
+    background: rgba(255, 255, 255, 0.022);
+  }
+
+  /* ─── Admin form controls ───────────────────────────────── */
+  .admin-input {
+    @apply block w-full rounded-md border border-rule bg-void/60 px-3.5 py-2.5 font-display text-cream placeholder-mist focus:border-ember/50 focus:outline-none focus:ring-1 focus:ring-ember/30 transition-colors;
+    font-size: 16px;
+  }
+  .admin-input:hover { @apply border-ruleStrong; }
+
+  .admin-btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-ember bg-ember/10 px-4 py-2.5 font-mono text-[11.5px] uppercase tracking-[0.18em] text-ember transition-all;
+  }
+  .admin-btn-primary:hover { @apply bg-ember/20; }
+  .admin-btn-primary:disabled { @apply opacity-40 cursor-not-allowed; }
+
+  .admin-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-rule bg-smoke/60 px-3.5 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-cream transition-all;
+  }
+  .admin-btn:hover { @apply border-ruleStrong bg-ash; }
+
+  .admin-btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-rose/30 bg-rose/5 px-3 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.18em] text-rose transition-all;
+  }
+  .admin-btn-danger:hover { @apply bg-rose/15; }
+}
+
+/* ─── TipTap editor surface ───────────────────────────────── */
+
+.tt-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  border: 1px solid theme('colors.rule');
+  border-bottom: none;
+  border-radius: 0.5rem 0.5rem 0 0;
+  background: theme('colors.smoke');
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+.tt-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.5rem;
+  font-family: theme('fontFamily.mono');
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: theme('colors.mist');
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.3rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.tt-tool:hover { color: theme('colors.cream'); background: theme('colors.ash'); }
+.tt-tool.is-active {
+  color: theme('colors.ember');
+  background: rgba(234, 88, 12, 0.08);
+  border-color: rgba(234, 88, 12, 0.3);
+}
+.tt-tool[disabled] { opacity: 0.3; cursor: not-allowed; }
+.tt-divider {
+  width: 1px;
+  height: 1.4rem;
+  background: theme('colors.rule');
+  margin: 0.3rem 0.2rem;
+  align-self: center;
+}
+
+.tt-editor {
+  border: 1px solid theme('colors.rule');
+  border-radius: 0 0 0.5rem 0.5rem;
+  background: theme('colors.void');
+  min-height: 480px;
+  padding: 1.75rem 2rem;
+  overflow-y: auto;
+}
+.tt-editor .ProseMirror {
+  outline: none;
+  min-height: 440px;
+  font-family: theme('fontFamily.body');
+  font-size: 16px;
+  line-height: 1.75;
+  color: theme('colors.cream');
+}
+.tt-editor .ProseMirror p { margin: 0.7em 0; }
+.tt-editor .ProseMirror h1 {
+  font-family: theme('fontFamily.display');
+  font-size: 2.2rem;
+  font-weight: 500;
+  line-height: 1.15;
+  margin: 1.2em 0 0.4em;
+  letter-spacing: -0.025em;
+}
+.tt-editor .ProseMirror h2 {
+  font-family: theme('fontFamily.display');
+  font-size: 1.7rem;
+  font-weight: 500;
+  line-height: 1.2;
+  margin: 1.3em 0 0.4em;
+  letter-spacing: -0.02em;
+}
+.tt-editor .ProseMirror h3 {
+  font-family: theme('fontFamily.display');
+  font-size: 1.35rem;
+  font-weight: 500;
+  margin: 1.2em 0 0.4em;
+}
+.tt-editor .ProseMirror strong { color: theme('colors.cream'); font-weight: 600; }
+.tt-editor .ProseMirror em { font-style: italic; color: theme('colors.parchment'); }
+.tt-editor .ProseMirror a { color: theme('colors.ember'); text-decoration: underline; text-underline-offset: 3px; }
+.tt-editor .ProseMirror ul,
+.tt-editor .ProseMirror ol { padding-left: 1.5em; margin: 0.8em 0; }
+.tt-editor .ProseMirror li { margin: 0.3em 0; }
+.tt-editor .ProseMirror code {
+  background: rgba(234, 88, 12, 0.10);
+  color: theme('colors.ember');
+  padding: 0.1em 0.4em;
+  border-radius: 0.25em;
+  font-family: theme('fontFamily.mono');
+  font-size: 0.88em;
+  border: 1px solid rgba(234, 88, 12, 0.15);
+}
+.tt-editor .ProseMirror pre {
+  background: theme('colors.ink');
+  border: 1px solid theme('colors.rule');
+  padding: 1.1em 1.3em;
+  border-radius: 0.5rem;
+  margin: 1.2em 0;
+  font-family: theme('fontFamily.mono');
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: theme('colors.cream');
+  overflow-x: auto;
+}
+.tt-editor .ProseMirror pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  border: 0;
+  font-size: inherit;
+}
+.tt-editor .ProseMirror blockquote {
+  border-left: 2px solid theme('colors.gold');
+  padding-left: 1em;
+  margin: 1em 0;
+  color: theme('colors.parchment');
+  font-style: italic;
+}
+.tt-editor .ProseMirror img {
+  max-width: 100%;
+  border-radius: 0.5rem;
+  margin: 1em 0;
+}
+.tt-editor .ProseMirror hr {
+  border: 0;
+  border-top: 1px solid theme('colors.rule');
+  margin: 1.5em 0;
+}
+.tt-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: theme('colors.ghost');
+  pointer-events: none;
+  height: 0;
+  font-style: italic;
+}
+
+/* Dropzone for attachments */
+.dropzone {
+  border: 1px dashed theme('colors.rule');
+  border-radius: 0.6rem;
+  padding: 1.6rem 1.4rem;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.012);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.dropzone:hover,
+.dropzone.is-over {
+  border-color: theme('colors.ruleStrong');
+  background: rgba(234, 88, 12, 0.04);
+}
+.dropzone.is-over { border-color: theme('colors.ember'); }
+
+/* ─── In-page post status actions (publish / delete on TIL detail) ── */
+
+.post-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.85rem;
+  margin: 0.5rem 0 1.5rem;
+  border: 1px dashed rgba(201, 169, 110, 0.22);
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.012);
+  font-family: theme('fontFamily.mono');
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.post-actions__hint {
+  color: theme('colors.gold');
+  letter-spacing: 0.22em;
+}
+.post-actions__sep {
+  width: 1px;
+  height: 14px;
+  background: theme('colors.rule');
+}
+.post-actions__state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: theme('colors.mist');
+}
+.post-actions__chip {
+  display: inline-flex;
+  padding: 0.15rem 0.55rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+}
+.post-actions__chip--draft {
+  color: theme('colors.gold');
+  background: rgba(201, 169, 110, 0.10);
+  border: 1px solid rgba(201, 169, 110, 0.25);
+}
+.post-actions__chip--published {
+  color: theme('colors.sage');
+  background: rgba(90, 138, 122, 0.10);
+  border: 1px solid rgba(90, 138, 122, 0.30);
+}
+.post-actions__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 0.3rem;
+  cursor: pointer;
+  border: 1px solid theme('colors.rule');
+  background: transparent;
+  color: theme('colors.cream');
+  transition: all 0.18s ease;
+  font-family: inherit;
+  font-size: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+.post-actions__btn:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: theme('colors.cream');
+}
+.post-actions__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.post-actions__btn--primary {
+  color: theme('colors.ember');
+  border-color: rgba(234, 88, 12, 0.3);
+}
+.post-actions__btn--primary:hover {
+  background: rgba(234, 88, 12, 0.10);
+}
+.post-actions__btn--danger {
+  margin-left: auto;
+  color: theme('colors.rose');
+  border-color: rgba(185, 71, 47, 0.3);
+}
+.post-actions__btn--danger:hover {
+  background: rgba(185, 71, 47, 0.10);
+}
+.post-actions__status {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: theme('colors.ember');
+}
+
+/* ─── Floating AdminBar ──────────────────────────────────── */
+
+.admin-bar {
+  position: fixed;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(11, 11, 15, 0.92);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(201, 169, 110, 0.22);
+  box-shadow:
+    0 12px 40px -10px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(0, 0, 0, 0.4);
+  font-family: theme('fontFamily.mono');
+}
+.admin-bar__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.7rem 0.35rem 0.6rem;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: theme('colors.gold');
+}
+.admin-bar__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: theme('colors.ember');
+  box-shadow: 0 0 8px theme('colors.ember');
+  animation: dot-pulse 2.4s ease-in-out infinite;
+}
+@keyframes dot-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+.admin-bar__sep {
+  width: 1px;
+  height: 18px;
+  background: theme('colors.rule');
+  margin: 0 0.15rem;
+}
+.admin-bar__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.7rem;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: theme('colors.cream');
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-decoration: none;
+}
+.admin-bar__btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: theme('colors.ember');
+}
+.admin-bar__btn.is-active {
+  color: theme('colors.gold');
+  background: rgba(201, 169, 110, 0.10);
+}
+.admin-bar__btn--danger:hover {
+  color: theme('colors.rose');
+  background: rgba(185, 71, 47, 0.12);
+}
+.admin-bar__btn--muted {
+  color: theme('colors.mist');
+}
+.admin-bar__status {
+  padding: 0 0.7rem 0 0.5rem;
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: theme('colors.ember');
+}
+
+@media (max-width: 640px) {
+  .admin-bar {
+    bottom: 0.6rem;
+    right: 0.6rem;
+    left: 0.6rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+/* ─── Inline editable fields (Jira-style) ──────────────────── */
+
+.editable {
+  position: relative;
+  border-radius: 0.4rem;
+  transition: background 0.2s ease;
+}
+.editable--admin {
+  cursor: text;
+  padding: 0.15rem 0.4rem;
+  margin: -0.15rem -0.4rem;
+}
+.editable--admin:hover {
+  background: rgba(201, 169, 110, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(201, 169, 110, 0.18);
+}
+.editable__pencil {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.3rem;
+  font-size: 0.7rem;
+  color: theme('colors.gold');
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.editable--admin:hover .editable__pencil {
+  opacity: 0.6;
+}
+
+.editable-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+.editable-row button {
+  font-family: theme('fontFamily.mono');
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 0.4rem 0.85rem;
+  border-radius: 0.4rem;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  border: 1px solid theme('colors.rule');
+}
+.editable-row button.save {
+  color: theme('colors.ember');
+  background: rgba(234, 88, 12, 0.08);
+  border-color: rgba(234, 88, 12, 0.35);
+}
+.editable-row button.save:hover {
+  background: rgba(234, 88, 12, 0.16);
+}
+.editable-row button.save:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.editable-row button.cancel {
+  color: theme('colors.mist');
+  background: transparent;
+}
+.editable-row button.cancel:hover {
+  color: theme('colors.cream');
+  background: rgba(255, 255, 255, 0.04);
+}
+.editable-row__status {
+  font-family: theme('fontFamily.mono');
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: theme('colors.mist');
+  align-self: center;
+  margin-left: 0.4rem;
+}
+
+.editable-input {
+  display: block;
+  width: 100%;
+  background: theme('colors.void');
+  border: 1px solid rgba(234, 88, 12, 0.3);
+  border-radius: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  color: theme('colors.cream');
+  outline: none;
+}
+.editable-input:focus {
+  border-color: theme('colors.ember');
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.12);
+}
+
+/* slight bottom padding so the AdminBar doesn't overlap content on mobile */
+body { padding-bottom: 4rem; }
+@media (min-width: 640px) { body { padding-bottom: 0; } }
+
+/* ═══════════════════════════════════════════════════════════
+   GAME CARD SYSTEM — the centerpiece
+   ═══════════════════════════════════════════════════════════ */
+
+.game-card {
+  position: relative;
+  isolation: isolate;
+  border-radius: 8px;
+  border: 1px solid rgba(201, 169, 110, 0.14);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--card-bar, #c9a96e) 9%, transparent), transparent 35%),
+    linear-gradient(180deg, theme('colors.ash'), theme('colors.smoke'));
+  padding: 2rem 1.75rem 1.75rem;
+  overflow: hidden;
+  cursor: pointer;
+  transform-style: preserve-3d;
+  transition:
+    transform 0.45s var(--ease-out-back),
+    border-color 0.4s ease,
+    box-shadow 0.4s ease;
+  box-shadow:
+    inset 0 1px 0 0 rgba(201, 169, 110, 0.08),
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.6),
+    0 2px 0 0 rgba(0, 0, 0, 0.5),
+    0 24px 40px -24px rgba(0, 0, 0, 0.7);
+}
+
+/* Hero variant — viewport-filling first impression */
+.game-card--hero {
+  min-height: calc(100vh - 220px);
+  padding: 2.5rem 2rem;
+}
+@media (min-width: 768px) {
+  .game-card--hero {
+    min-height: calc(100vh - 200px);
+    padding: 3rem 3rem 2.5rem;
+  }
+}
+
+/* Painted top edge — bolder than ::before line, card-color aware */
+.game-card__edge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--card-bar, theme('colors.gold')) 20%,
+    var(--card-bar, theme('colors.gold')) 80%,
+    transparent 100%
+  );
+  opacity: 0.55;
+  z-index: 2;
+}
+
+/* Giant watermark — card number/letter in the card's accent color */
+.game-card__watermark {
+  position: absolute;
+  bottom: -2.2rem;
+  right: -1rem;
+  font-family: theme('fontFamily.display');
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(120px, 18vw, 220px);
+  line-height: 0.85;
+  color: var(--card-bar, theme('colors.gold'));
+  opacity: 0.045;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+  letter-spacing: -0.04em;
+  font-variation-settings: 'SOFT' 100, 'opsz' 144;
+}
+.game-card--hero .game-card__watermark {
+  font-size: clamp(180px, 30vw, 420px);
+  bottom: -5rem;
+  right: -3rem;
+  opacity: 0.05;
+}
+
+/* Title block — clear English section name with type-color stripe */
+.game-card__head {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 1.5rem;
+}
+.game-card__title {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  font-family: theme('fontFamily.mono');
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: theme('colors.cream');
+  margin: 0;
+}
+.game-card__title-bar {
+  display: inline-block;
+  width: 2px;
+  height: 14px;
+  background: var(--card-bar, theme('colors.gold'));
+  border-radius: 2px;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--card-bar, #c9a96e) 80%, transparent);
+}
+.game-card__kicker {
+  margin-top: 0.55rem;
+  margin-left: 1.5rem;
+  font-family: theme('fontFamily.display');
+  font-style: italic;
+  font-size: 0.95rem;
+  color: theme('colors.parchment');
+  font-variation-settings: 'SOFT' 80, 'opsz' 14;
+  opacity: 0.85;
+}
+
+.game-card:focus-visible {
+  outline: 1px solid theme('colors.gold');
+  outline-offset: 4px;
+}
+
+/* Top "rarity bar" — a subtle 1px painted strip */
+.game-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 1.25rem;
+  right: 1.25rem;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--card-bar, theme('colors.gold')),
+    transparent
+  );
+  opacity: 0.7;
+}
+
+/* Foil — cursor-following soft light */
+.game-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    520px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 220, 180, 0.09),
+    transparent 40%
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease;
+  border-radius: inherit;
+  z-index: 0;
+}
+.game-card:hover::after { opacity: 1; }
+
+.game-card:hover {
+  border-color: rgba(201, 169, 110, 0.32);
+  box-shadow:
+    inset 0 1px 0 0 rgba(201, 169, 110, 0.15),
+    inset 0 -1px 0 0 rgba(0, 0, 0, 0.6),
+    0 2px 0 0 rgba(0, 0, 0, 0.5),
+    0 30px 50px -22px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(234, 88, 12, 0.06);
+}
+
+/* Corner ornaments */
+.game-card__numeral {
+  position: absolute;
+  top: 0.75rem;
+  left: 1rem;
+  font-family: theme('fontFamily.mono');
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  color: theme('colors.ghost');
+  text-transform: uppercase;
+  z-index: 2;
+}
+.game-card__glyph {
+  position: absolute;
+  top: 0.7rem;
+  right: 1rem;
+  font-family: theme('fontFamily.display');
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--card-bar, theme('colors.gold'));
+  opacity: 0.55;
+  z-index: 2;
+}
+.game-card__flourish-bl,
+.game-card__flourish-br {
+  position: absolute;
+  bottom: 0.45rem;
+  width: 28px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201, 169, 110, 0.35), transparent);
+  z-index: 2;
+}
+.game-card__flourish-bl { left: 1rem; }
+.game-card__flourish-br { right: 1rem; }
+
+.game-card__body {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.game-card__face {
+  flex: 1 1 auto;
+}
+
+/* Scroll cue beneath the hero */
+.scroll-cue {
+  margin: 1.75rem auto 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: theme('fontFamily.mono');
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: theme('colors.ghost');
+}
+.scroll-cue__arrow {
+  font-family: theme('fontFamily.display');
+  font-size: 1.4rem;
+  color: theme('colors.gold');
+  animation: cue-bounce 2.6s var(--ease-in-out) infinite;
+  line-height: 1;
+}
+@keyframes cue-bounce {
+  0%, 100% { transform: translateY(-2px); opacity: 0.45; }
+  50%      { transform: translateY(6px);  opacity: 0.95; }
+}
+
+/* Section divider — between hero and the rest of the folio */
+.folio-break {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 1.25rem;
+  margin: 2rem 0 1.75rem;
+  color: theme('colors.ghost');
+}
+.folio-break::before,
+.folio-break::after {
+  content: '';
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201, 169, 110, 0.25), transparent);
+}
+.folio-break__label {
+  font-family: theme('fontFamily.mono');
+  font-size: 10.5px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+.folio-break__label .ornament {
+  color: theme('colors.gold');
+  font-family: theme('fontFamily.display');
+  font-style: italic;
+  font-size: 1.1rem;
+}
+
+/* The expanded detail panel — hidden on closed cards, revealed on clone */
+.game-card__detail {
+  display: none;
+}
+.card-clone.is-open .game-card__detail {
+  display: block;
+  animation: detail-rise 0.6s 0.15s var(--ease-out-back) both;
+}
+@keyframes detail-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* "Tap to summon" hint, appears on hover */
+.game-card__hint {
+  position: absolute;
+  bottom: 0.9rem;
+  right: 1.1rem;
+  font-family: theme('fontFamily.mono');
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: theme('colors.ghost');
+  opacity: 0;
+  transform: translateX(4px);
+  transition: opacity 0.4s ease, transform 0.4s var(--ease-out-back);
+  z-index: 2;
+}
+.game-card:hover .game-card__hint {
+  opacity: 0.7;
+  transform: translateX(0);
+}
+
+/* ─── Card expansion (clone + backdrop) ─────────────────── */
+
+.card-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(8, 8, 12, 0.75);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease;
+}
+.card-backdrop.is-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.card-clone {
+  position: fixed !important;
+  z-index: 60;
+  margin: 0 !important;
+  cursor: default;
+  transition:
+    top 0.6s var(--ease-out-back),
+    left 0.6s var(--ease-out-back),
+    width 0.6s var(--ease-out-back),
+    height 0.6s var(--ease-out-back),
+    border-radius 0.6s var(--ease-out-back),
+    box-shadow 0.6s var(--ease-out-back);
+  overflow: hidden;
+  transform: none !important;
+}
+.card-clone::after { opacity: 0 !important; } /* kill foil mid-flight */
+
+.card-clone.is-open {
+  border-radius: 12px;
+  border-color: rgba(201, 169, 110, 0.32);
+  overflow-y: auto;
+  box-shadow:
+    0 60px 120px -20px rgba(0, 0, 0, 0.95),
+    0 0 0 1px rgba(201, 169, 110, 0.18),
+    0 0 100px -10px rgba(234, 88, 12, 0.12);
+  padding: 3rem 2.5rem 2.5rem;
+}
+.card-clone.is-open .game-card__hint { display: none; }
+.card-clone.is-open .game-card__numeral { top: 1.4rem; left: 1.8rem; }
+.card-clone.is-open .game-card__glyph   { top: 1.4rem; right: 1.8rem; }
+.card-clone.is-open .game-card__watermark { opacity: 0.025; }
+.card-clone.is-open .game-card__edge { opacity: 0.7; }
+
+.card-close {
+  position: absolute;
+  top: 1.1rem;
+  right: 3.4rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: rgba(201, 169, 110, 0.08);
+  color: theme('colors.cream');
+  border: 1px solid rgba(201, 169, 110, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: theme('fontFamily.display');
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 5;
+  transition: background 0.25s, transform 0.25s;
+}
+.card-close:hover {
+  background: rgba(234, 88, 12, 0.18);
+  transform: rotate(90deg);
+}
+
+/* ─── Animations ───────────────────────────────────────── */
+
+.reveal { animation: theme('animation.fade-up'); }
+.reveal-1 { animation-delay: 0.05s; }
+.reveal-2 { animation-delay: 0.12s; }
+.reveal-3 { animation-delay: 0.20s; }
+.reveal-4 { animation-delay: 0.28s; }
+.reveal-5 { animation-delay: 0.36s; }
+.reveal-6 { animation-delay: 0.44s; }
+.reveal-7 { animation-delay: 0.52s; }
+
+/* ─── Prose for TIL posts (dark) ───────────────────────── */
+
+.prose {
+  max-width: 65ch;
+  color: theme('colors.cream');
+  font-family: theme('fontFamily.body');
+  font-size: 1.0625rem;
+  line-height: 1.78;
+}
+.prose p { margin: 1em 0; }
+.prose h2 {
+  font-family: theme('fontFamily.display');
+  font-size: 1.875rem;
+  margin-top: 1.8em;
+  margin-bottom: 0.45em;
+  letter-spacing: -0.02em;
+}
+.prose h3 {
+  font-family: theme('fontFamily.display');
+  font-size: 1.5rem;
+  margin-top: 1.5em;
+  margin-bottom: 0.35em;
+}
+.prose a { color: theme('colors.ember'); text-decoration: underline; text-underline-offset: 3px; }
+.prose code:not(pre code) {
+  background: rgba(234, 88, 12, 0.10);
+  color: theme('colors.ember');
+  padding: 0.1em 0.4em;
+  border-radius: 0.25em;
+  font-family: theme('fontFamily.mono');
+  font-size: 0.88em;
+  border: 1px solid rgba(234, 88, 12, 0.15);
+}
+.prose pre {
+  background: theme('colors.ink');
+  border: 1px solid theme('colors.rule');
+  padding: 1.3em 1.5em;
+  border-radius: 0.6rem;
+  overflow-x: auto;
+  margin: 1.6em 0;
+  font-size: 0.88rem;
+  line-height: 1.65;
+  box-shadow: inset 0 1px 0 rgba(201, 169, 110, 0.04);
+}
+.prose pre code { background: transparent; color: inherit; padding: 0; border: 0; }
+.prose ul, .prose ol { padding-left: 1.5em; margin: 1em 0; }
+.prose li { margin: 0.5em 0; }
+.prose blockquote {
+  border-left: 2px solid theme('colors.gold');
+  padding-left: 1.1em;
+  color: theme('colors.parchment');
+  font-style: italic;
+  margin: 1.4em 0;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

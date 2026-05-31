@@ -1,0 +1,246 @@
+---
+import '@/styles/globals.css';
+import AdminBar from '@/components/admin/AdminBar';
+interface Props {
+  title?: string;
+  description?: string;
+}
+const {
+  title = 'Gokul Raam — Backend Engineer',
+  description = 'Backend engineer building fast, maintainable APIs. Python · FastAPI · PostgreSQL · Redis.',
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#0b0b0f" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..700,30..100;1,9..144,300..700,30..100&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+  </head>
+  <body class="font-body">
+    <!-- Atmospheric background layers -->
+    <div class="atmosphere"></div>
+    <div class="grid-veil"></div>
+    <div class="grain"></div>
+
+    <div class="mx-auto max-w-6xl px-6 py-7 md:px-10 md:py-10">
+      <header class="mb-14 flex items-center justify-between">
+        <a href="/" class="group flex items-baseline gap-2 font-mono text-[12.5px] tracking-[0.18em] uppercase">
+          <span class="text-gold">◆</span>
+          <span class="text-cream">gokul</span>
+          <span class="text-mist">/</span>
+          <span class="text-mist group-hover:text-cream transition-colors">raam</span>
+        </a>
+        <nav class="hidden gap-7 font-mono text-[11.5px] uppercase tracking-[0.18em] text-mist md:flex">
+          <a href="/work" class="hover:text-cream transition-colors">work</a>
+          <a href="/projects" class="hover:text-cream transition-colors">projects</a>
+          <a href="/til" class="hover:text-cream transition-colors">til</a>
+          <a href="/now" class="hover:text-cream transition-colors">now</a>
+          <a href="/badminton" class="hover:text-cream transition-colors">badminton</a>
+          <a href="/uses" class="hover:text-cream transition-colors">uses</a>
+          <a href="/resume.pdf" class="text-ember hover:opacity-80 transition-opacity">cv ↗</a>
+        </nav>
+      </header>
+
+      <slot />
+
+      <footer class="mt-32 border-t border-rule pt-8">
+        <div class="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+          <div class="flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.16em] text-ghost">
+            <span class="text-gold">◇</span>
+            <span>folio · mmxxvi · coimbatore</span>
+          </div>
+          <div class="flex gap-5 font-mono text-[11px] uppercase tracking-[0.16em] text-mist">
+            <a href="https://github.com/gokulvibe" class="hover:text-cream">github</a>
+            <a href="https://linkedin.com/in/gokulraam" class="hover:text-cream">linkedin</a>
+            <a href="mailto:dev.gokulraam@gmail.com" class="hover:text-cream">email</a>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Floating admin bar — renders only when authenticated -->
+    <AdminBar client:load />
+
+    <!-- Card expander: vanilla, no framework, ~80 lines -->
+    <script is:inline>
+      (() => {
+        let activeClone = null;
+        let activeOriginal = null;
+        let isAnimating = false;
+
+        const backdrop = (() => {
+          const el = document.createElement('div');
+          el.className = 'card-backdrop';
+          el.setAttribute('aria-hidden', 'true');
+          document.body.appendChild(el);
+          return el;
+        })();
+
+        function bindTilt(card) {
+          if (card.__tilt) return;
+          card.__tilt = true;
+          const onMove = (e) => {
+            const r = card.getBoundingClientRect();
+            const x = (e.clientX - r.left) / r.width;
+            const y = (e.clientY - r.top) / r.height;
+            card.style.setProperty('--mx', `${x * 100}%`);
+            card.style.setProperty('--my', `${y * 100}%`);
+            const tx = (y - 0.5) * 5;
+            const ty = (0.5 - x) * 5;
+            card.style.transform = `perspective(900px) rotateX(${tx}deg) rotateY(${ty}deg) translateZ(0)`;
+          };
+          const onLeave = () => {
+            card.style.transform = '';
+          };
+          card.addEventListener('mousemove', onMove);
+          card.addEventListener('mouseleave', onLeave);
+        }
+
+        function expand(card) {
+          if (isAnimating || activeClone) return;
+          isAnimating = true;
+
+          const rect = card.getBoundingClientRect();
+          const clone = card.cloneNode(true);
+          clone.classList.add('card-clone');
+          clone.removeAttribute('data-expandable');
+          clone.style.transform = '';
+
+          // Initial position == original
+          Object.assign(clone.style, {
+            position: 'fixed',
+            top: rect.top + 'px',
+            left: rect.left + 'px',
+            width: rect.width + 'px',
+            height: rect.height + 'px',
+            transition: 'none',
+            margin: '0',
+          });
+
+          // Close button
+          const close = document.createElement('button');
+          close.className = 'card-close';
+          close.setAttribute('aria-label', 'Close card');
+          close.innerHTML = '×';
+          close.addEventListener('click', (e) => {
+            e.stopPropagation();
+            collapse();
+          });
+          clone.appendChild(close);
+
+          document.body.appendChild(clone);
+          card.style.visibility = 'hidden';
+
+          backdrop.classList.add('is-active');
+          document.body.style.overflow = 'hidden';
+
+          // Force reflow before transition
+          void clone.offsetHeight;
+
+          // Target geometry: centered, capped
+          const targetW = Math.min(window.innerWidth * 0.92, 1080);
+          const targetH = Math.min(window.innerHeight * 0.92, 880);
+          const targetL = (window.innerWidth - targetW) / 2;
+          const targetT = (window.innerHeight - targetH) / 2;
+
+          requestAnimationFrame(() => {
+            clone.style.transition = '';
+            clone.classList.add('is-open');
+            clone.style.top = targetT + 'px';
+            clone.style.left = targetL + 'px';
+            clone.style.width = targetW + 'px';
+            clone.style.height = targetH + 'px';
+          });
+
+          activeClone = clone;
+          activeOriginal = card;
+          setTimeout(() => { isAnimating = false; }, 650);
+        }
+
+        function collapse() {
+          if (!activeClone || !activeOriginal || isAnimating) return;
+          isAnimating = true;
+
+          const clone = activeClone;
+          const original = activeOriginal;
+          const rect = original.getBoundingClientRect();
+
+          clone.classList.remove('is-open');
+          clone.style.top = rect.top + 'px';
+          clone.style.left = rect.left + 'px';
+          clone.style.width = rect.width + 'px';
+          clone.style.height = rect.height + 'px';
+
+          backdrop.classList.remove('is-active');
+
+          const done = () => {
+            clone.remove();
+            original.style.visibility = '';
+            document.body.style.overflow = '';
+            activeClone = null;
+            activeOriginal = null;
+            isAnimating = false;
+          };
+
+          clone.addEventListener('transitionend', done, { once: true });
+          setTimeout(done, 800); // safety net
+        }
+
+        // Click delegation
+        document.addEventListener('click', (e) => {
+          const card = e.target.closest('[data-expandable]:not(.card-clone)');
+          if (card) {
+            // Don't expand if clicking a real link/button inside the card
+            const inner = e.target.closest('a, button');
+            if (inner && !inner.classList.contains('card-close')) return;
+            e.preventDefault();
+            expand(card);
+            return;
+          }
+          if (e.target === backdrop) collapse();
+        });
+
+        // Keyboard
+        document.addEventListener('keydown', (e) => {
+          if (!activeClone) return;
+          if (e.key === 'Escape') collapse();
+        });
+
+        // Initial bind
+        function bindAll() {
+          document.querySelectorAll('[data-expandable]').forEach((card) => {
+            bindTilt(card);
+            card.setAttribute('role', 'button');
+            card.setAttribute('tabindex', '0');
+            card.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                expand(card);
+              }
+            });
+          });
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', bindAll);
+        } else {
+          bindAll();
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,75 @@
+---
+export const prerender = false;
+
+import Base from '@/layouts/Base.astro';
+import Card from '@/components/Card.astro';
+import EditableField from '@/components/admin/EditableField';
+
+const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8000';
+
+interface ProjectRow {
+  id: number; slug: string; title: string; year: string;
+  summary: string; stack: string; link: string; award_tag: string;
+  featured: boolean; order: number;
+}
+
+let projects: ProjectRow[] = [];
+let backendOk = true;
+try {
+  const res = await fetch(`${API_BASE}/api/projects`);
+  if (res.ok) projects = await res.json();
+  else backendOk = false;
+} catch {
+  backendOk = false;
+}
+---
+
+<Base title="Projects — Gokul Raam">
+  <header class="mb-12">
+    <div class="label mb-4">// projects</div>
+    <h1 class="display text-5xl md:text-6xl">Things I've<br /><span class="italic text-ember">shipped.</span></h1>
+  </header>
+
+  {!backendOk && (
+    <div class="card border-rose/30 bg-rose/5 mb-8">
+      <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-rose mb-2">// backend offline</p>
+      <p class="text-sm text-parchment">The API at <code class="font-mono">{API_BASE}</code> is unreachable.</p>
+    </div>
+  )}
+
+  <div class="grid gap-5 md:grid-cols-2">
+    {projects.map((p) => (
+      <Card class="flex flex-col h-full">
+        <div class="flex items-baseline justify-between gap-4 mb-3">
+          <h2 class="font-display text-2xl leading-tight">
+            <EditableField client:load endpoint={`/api/projects/${p.id}`} field="title" initial={p.title} className="font-display" />
+          </h2>
+          <span class="font-mono text-xs text-mist shrink-0">
+            <EditableField client:load endpoint={`/api/projects/${p.id}`} field="year" initial={p.year} className="font-mono" />
+          </span>
+        </div>
+        {p.award_tag && (
+          <div class="mb-3 chip-accent w-fit">
+            <EditableField client:load endpoint={`/api/projects/${p.id}`} field="award_tag" initial={p.award_tag} className="font-mono" />
+          </div>
+        )}
+        <p class="text-cream/80 leading-relaxed mb-4">
+          <EditableField client:load endpoint={`/api/projects/${p.id}`} field="summary" initial={p.summary} format="longtext" />
+        </p>
+        <div class="mt-auto">
+          <EditableField client:load endpoint={`/api/projects/${p.id}`} field="stack" initial={p.stack} format="chips" />
+        </div>
+        {p.link && (
+          <a
+            href={p.link}
+            class="mt-4 font-mono text-xs text-ember hover:underline"
+            target="_blank"
+            rel="noopener"
+          >
+            {p.link.includes('github') ? 'github ↗' : 'live ↗'}
+          </a>
+        )}
+      </Card>
+    ))}
+  </div>
+</Base>

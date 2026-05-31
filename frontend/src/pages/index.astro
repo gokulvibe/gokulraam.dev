@@ -1,0 +1,535 @@
+---
+// SSR so the homepage TIL card + Now items always reflect the latest DB state.
+export const prerender = false;
+
+import Base from '@/layouts/Base.astro';
+import ExpandableCard from '@/components/ExpandableCard.astro';
+import EditableNowItem from '@/components/admin/EditableNowItem';
+import EditableField from '@/components/admin/EditableField';
+
+const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8000';
+
+interface TilSummary {
+  id: number;
+  slug: string;
+  title: string;
+  tags: string[];
+  draft: boolean;
+  created_at: string;
+}
+interface NowApiItem {
+  slug: string;
+  label: string;
+  value: string;
+  order: number;
+  updated_at: string;
+}
+interface BadPlayer {
+  id: number; slug: string; name: string; country: string; flag: string;
+  discipline: string; next_event: string; order: number;
+}
+interface BadTour {
+  id: number; slug: string; name: string; dates: string; location: string;
+  tier: string; order: number;
+}
+interface RoleRow {
+  id: number; slug: string; section: string; title: string;
+  organization: string; dates: string; bullets: string; stack: string;
+}
+interface ProjectRow {
+  id: number; slug: string; title: string; year: string;
+  summary: string; stack: string; link: string; award_tag: string;
+  featured: boolean;
+}
+interface ProfileData {
+  id: number;
+  first_name: string; last_name: string;
+  role_title: string; organization: string;
+  location_short: string; location_full: string;
+  email: string; phone: string;
+  github_url: string; linkedin_url: string; cv_url: string;
+  intro_paragraph: string; about_paragraph: string; summary: string;
+  skills_csv: string;
+}
+interface ProfileStatRow {
+  id: number; slug: string; label: string; primary: string; secondary: string; order: number;
+}
+interface SpecialtyRow {
+  id: number; slug: string; name: string; gloss: string; metric: string; order: number;
+}
+
+// Fetch in parallel
+const [tilPosts, nowItems, players, tournaments, allRoles, allProjects, profile, profileStats, specialties] = await Promise.all([
+  fetch(`${API_BASE}/api/til`).then((r) => (r.ok ? r.json() : [])).catch(() => [] as TilSummary[]),
+  fetch(`${API_BASE}/api/now`).then((r) => (r.ok ? r.json() : [])).catch(() => [] as NowApiItem[]),
+  fetch(`${API_BASE}/api/badminton/players`).then((r) => (r.ok ? r.json() : [])).catch(() => [] as BadPlayer[]),
+  fetch(`${API_BASE}/api/badminton/tournaments`).then((r) => (r.ok ? r.json() : [])).catch(() => [] as BadTour[]),
+  fetch(`${API_BASE}/api/work/roles`).then((r) => (r.ok ? r.json() : [])).catch(() => [] as RoleRow[]),
+  fetch(`${API_BASE}/api/projects`).then((r) => (r.ok ? r.json() : [])).catch(() => [] as ProjectRow[]),
+  fetch(`${API_BASE}/api/profile`).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+  fetch(`${API_BASE}/api/profile/stats`).then((r) => (r.ok ? r.json() : [])).catch(() => [] as ProfileStatRow[]),
+  fetch(`${API_BASE}/api/profile/specialties`).then((r) => (r.ok ? r.json() : [])).catch(() => [] as SpecialtyRow[]),
+]) as [TilSummary[], NowApiItem[], BadPlayer[], BadTour[], RoleRow[], ProjectRow[], ProfileData | null, ProfileStatRow[], SpecialtyRow[]];
+
+const currentRole = allRoles.find((r) => r.section === 'saama') ?? allRoles[0];
+const saamaRoles = allRoles.filter((r) => r.section === 'saama');
+const featuredProjects = allProjects.filter((p) => p.featured);
+const projectTitles = allProjects.map((p) => p.title.split(' — ')[0]).slice(0, 4).join(' · ');
+
+const latestTil = tilPosts[0];
+const recentTil = tilPosts.slice(0, 3);
+
+// Build a quick lookup for now items, and the most recent edit timestamp.
+const nowBySlug = new Map(nowItems.map((i) => [i.slug, i]));
+const nowHeadline = nowBySlug.get('headline')?.value ??
+  'Tuning a CSV → Postgres pipeline. 12× faster, and counting.';
+
+const nowFacetOrder = ['building', 'at-work', 'reading', 'watching', 'learning', 'playing'];
+const nowFacets = nowFacetOrder
+  .map((s) => nowBySlug.get(s))
+  .filter((x): x is NowApiItem => !!x);
+
+const lastNowUpdate = nowItems.length
+  ? new Date(
+      nowItems.reduce(
+        (max, i) => (new Date(i.updated_at) > max ? new Date(i.updated_at) : max),
+        new Date(0),
+      ),
+    )
+  : null;
+const fmtNow = (d: Date) =>
+  d.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }).toLowerCase();
+---
+
+<Base>
+  <!-- ─── HERO — single card, fills the viewport ─────────────── -->
+  <section class="reveal">
+    <ExpandableCard
+      number="001"
+      variant="hero"
+      glyph="✦"
+      bar="gold"
+      watermark="G"
+      hint="unfold the chronicle"
+      class="reveal-1"
+    >
+      <div slot="face" class="flex h-full flex-col">
+        <p class="label flex items-center gap-2 flex-wrap">
+          <span class="text-gold">◇</span>
+          {profile && <>
+            <EditableField client:load endpoint="/api/profile" field="role_title" initial={profile.role_title} className="font-mono" />
+            <span>·</span>
+            <EditableField client:load endpoint="/api/profile" field="organization" initial={profile.organization} className="font-mono" />
+            <span>·</span>
+            <EditableField client:load endpoint="/api/profile" field="location_short" initial={profile.location_short} className="font-mono" />
+          </>}
+        </p>
+
+        <div class="mt-auto pt-12">
+          <h1 class="display text-[68px] leading-[0.9] md:text-[120px]">
+            {profile && (
+              <>
+                <EditableField client:load endpoint="/api/profile" field="first_name" initial={profile.first_name} className="font-display" />
+                <br />
+                <span class="display-italic text-ember">
+                  <EditableField client:load endpoint="/api/profile" field="last_name" initial={profile.last_name} className="font-display" />.
+                </span>
+              </>
+            )}
+          </h1>
+
+          <p class="mt-10 max-w-xl text-[17px] leading-[1.6] text-parchment md:text-[18px]">
+            {profile && (
+              <EditableField client:load endpoint="/api/profile" field="intro_paragraph" initial={profile.intro_paragraph} format="longtext" />
+            )}
+          </p>
+
+          <div class="mt-10 grid max-w-2xl grid-cols-2 gap-x-8 gap-y-5 md:grid-cols-4">
+            {profileStats.map((s) => (
+              <div>
+                <p class="label mb-1.5">
+                  <EditableField client:load endpoint={`/api/profile/stats/${s.id}`} field="label" initial={s.label} className="font-mono" />
+                </p>
+                <p class="font-display text-[17px] leading-tight">
+                  <EditableField client:load endpoint={`/api/profile/stats/${s.id}`} field="primary" initial={s.primary} className="font-display" />
+                </p>
+                <p class="mt-0.5 font-mono text-[10.5px] uppercase tracking-[0.14em] text-mist">
+                  <EditableField client:load endpoint={`/api/profile/stats/${s.id}`} field="secondary" initial={s.secondary} className="font-mono" />
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div slot="detail" class="mt-8 grid gap-10">
+
+        <!-- About — short blurb -->
+        <section>
+          <p class="game-card__title mb-3">
+            <span class="game-card__title-bar"></span><span>about</span>
+          </p>
+          <p class="max-w-2xl text-[15.5px] leading-[1.75] text-parchment">
+            {profile && (
+              <EditableField client:load endpoint="/api/profile" field="about_paragraph" initial={profile.about_paragraph} format="longtext" />
+            )}
+          </p>
+        </section>
+
+        <!-- Specialties — floating keyword grid -->
+        <section>
+          <p class="game-card__title mb-5">
+            <span class="game-card__title-bar"></span><span>specialties</span>
+          </p>
+          <div class="grid grid-cols-2 gap-2.5 md:grid-cols-3">
+            {specialties.map((sp) => (
+              <div class="specialty">
+                <span class="specialty__name">
+                  <EditableField client:load endpoint={`/api/profile/specialties/${sp.id}`} field="name" initial={sp.name} className="font-display" />
+                </span>
+                <span class="specialty__gloss">
+                  <EditableField client:load endpoint={`/api/profile/specialties/${sp.id}`} field="gloss" initial={sp.gloss} className="font-mono" />
+                </span>
+                {sp.metric && (
+                  <span class="specialty__metric">
+                    <EditableField client:load endpoint={`/api/profile/specialties/${sp.id}`} field="metric" initial={sp.metric} className="font-display" />
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <!-- Stack — chips (from profile.skills_csv) -->
+        <section>
+          <p class="game-card__title mb-4">
+            <span class="game-card__title-bar"></span><span>stack</span>
+          </p>
+          {profile && (
+            <EditableField client:load endpoint="/api/profile" field="skills_csv" initial={profile.skills_csv} format="chips" />
+          )}
+        </section>
+
+        <!-- Contact strip -->
+        {profile && (
+          <section class="flex flex-wrap items-center gap-5 border-t border-rule pt-5 font-mono text-[12px] uppercase tracking-[0.16em]">
+            <a href={`mailto:${profile.email}`} class="text-cream hover:text-ember">email →</a>
+            <a href={profile.github_url} class="text-cream hover:text-ember">github →</a>
+            <a href={profile.linkedin_url} class="text-cream hover:text-ember">linkedin →</a>
+            <a href={profile.cv_url} class="ml-auto text-ember">download cv ↓</a>
+            <a href="/work" class="text-mist hover:text-cream">full chronicle →</a>
+          </section>
+        )}
+      </div>
+    </ExpandableCard>
+
+    <!-- Scroll cue -->
+    <div class="scroll-cue" aria-hidden="true">
+      <span>continue the folio</span>
+      <span class="scroll-cue__arrow">⌄</span>
+    </div>
+  </section>
+
+  <!-- ─── II · CATALOGUE ─────────────────────────────────── -->
+  <div class="folio-break">
+    <span class="folio-break__label">
+      <span class="ornament">⁂</span>
+      <span>folio II &nbsp;·&nbsp; the rest</span>
+      <span class="ornament">⁂</span>
+    </span>
+  </div>
+
+  <section class="grid grid-cols-12 gap-3 md:gap-4">
+
+    <!-- NOW -->
+    <ExpandableCard
+      number="002"
+      title="Now"
+      kicker="The present moment, in six facets."
+      glyph="◐"
+      bar="ember"
+      class="col-span-12 md:col-span-6 reveal reveal-2"
+    >
+      <div slot="face" class="flex h-full min-h-[180px] flex-col">
+        <p class="display mt-2 text-[26px] leading-[1.1]">
+          <EditableNowItem
+            client:load
+            slug="headline"
+            initial={nowHeadline}
+            multiline
+            className="font-display"
+          />
+        </p>
+        <p class="mt-auto font-mono text-[10.5px] uppercase tracking-[0.16em] text-ghost">
+          {lastNowUpdate ? `updated · ${fmtNow(lastNowUpdate)}` : 'updated · —'}
+        </p>
+      </div>
+
+      <div slot="detail" class="mt-4 grid gap-5 md:grid-cols-2">
+        {nowFacets.map((item) => (
+          <div class="border-l border-rule pl-4">
+            <p class="label mb-1.5">{item.label}</p>
+            <p class="font-display text-[16.5px] leading-snug">
+              <EditableNowItem
+                client:load
+                slug={item.slug}
+                initial={item.value}
+                multiline
+                className="font-display"
+              />
+            </p>
+          </div>
+        ))}
+        <a href="/now" class="md:col-span-2 mt-3 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-ember">
+          full /now page <span>→</span>
+        </a>
+      </div>
+    </ExpandableCard>
+
+    <!-- TIL -->
+    <ExpandableCard
+      number="003"
+      title="Today I Learnt"
+      kicker="A codex of small things, learned this week."
+      glyph="✎"
+      bar="lilac"
+      class="col-span-12 md:col-span-6 reveal reveal-3"
+    >
+      <div slot="face" class="flex h-full min-h-[180px] flex-col">
+        <p class="display mt-2 text-[22px] leading-[1.15]">
+          {latestTil?.title ?? 'Notes on small things.'}
+        </p>
+        <p class="mt-auto font-mono text-[10.5px] uppercase tracking-[0.16em] text-ghost">
+          {tilPosts.length} {tilPosts.length === 1 ? 'entry' : 'entries'} · latest
+        </p>
+      </div>
+
+      <div slot="detail" class="mt-4">
+        <ul class="divide-y divide-rule">
+          {recentTil.map((p, i) => (
+            <li class="py-4">
+              <p class="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ghost mb-1">
+                № {String(tilPosts.length - i).padStart(3, '0')} ·
+                {' '}{new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
+              </p>
+              <a href={`/til/${p.slug}`} class="font-display text-xl leading-snug hover:text-ember">
+                {p.title}
+              </a>
+              {p.tags.length > 0 && (
+                <div class="mt-2 flex flex-wrap gap-1.5">
+                  {p.tags.map((t) => <span class="chip">#{t}</span>)}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+        <a href="/til" class="mt-6 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-ember">
+          all entries <span>→</span>
+        </a>
+      </div>
+    </ExpandableCard>
+
+    <!-- WORK — wider, taller -->
+    <ExpandableCard
+      number="004"
+      title="Work"
+      kicker="Three years at Saama Technologies."
+      glyph="⌘"
+      bar="ember"
+      class="col-span-12 md:col-span-8 reveal reveal-4"
+    >
+      <div slot="face" class="flex h-full min-h-[220px] flex-col">
+        <p class="display mt-2 text-[26px] leading-[1.1]">
+          {currentRole?.title ?? 'Software Engineer'}<br />
+          <span class="text-parchment">@ {currentRole?.organization ?? 'Saama Technologies'}</span>
+        </p>
+        {currentRole?.bullets && (
+          <ul class="mt-5 space-y-1.5 font-mono text-[12.5px] text-mist">
+            {currentRole.bullets.split('\n').filter((b) => b.trim()).slice(0, 3).map((b) => (
+              <li class="truncate">→ {b.split('.')[0]}.</li>
+            ))}
+          </ul>
+        )}
+        <p class="mt-auto font-mono text-[10.5px] uppercase tracking-[0.16em] text-ghost">
+          {currentRole?.dates ?? 'dec 2023 → present'}
+        </p>
+      </div>
+
+      <div slot="detail" class="mt-4 space-y-6">
+        {saamaRoles.map((r) => (
+          <article>
+            <div class="flex items-baseline justify-between gap-3 mb-3">
+              <h4 class="font-display text-xl">{r.title}</h4>
+              <span class="font-mono text-[10.5px] uppercase tracking-[0.16em] text-mist">{r.dates}</span>
+            </div>
+            <ul class="space-y-2">
+              {r.bullets.split('\n').map((b) => b.trim()).filter(Boolean).map((b) => (
+                <li class="flex gap-3 text-[14.5px] leading-relaxed text-parchment">
+                  <span class="font-mono text-ember shrink-0">→</span>
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
+          </article>
+        ))}
+        <a href="/work" class="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-ember">
+          full chronicle <span>→</span>
+        </a>
+      </div>
+    </ExpandableCard>
+
+    <!-- USES -->
+    <ExpandableCard
+      number="005"
+      title="Uses"
+      kicker="The daily kit."
+      glyph="⚙"
+      bar="gold"
+      class="col-span-12 md:col-span-4 reveal reveal-5"
+    >
+      <div slot="face" class="flex h-full min-h-[220px] flex-col">
+        <p class="display mt-2 text-[20px] leading-[1.15]">
+          Editor, terminal,<br />the apparatus.
+        </p>
+        <ul class="mt-6 space-y-1.5 font-mono text-[12.5px] text-mist">
+          <li>vs code · vim mode</li>
+          <li>zsh · iterm2 · starship</li>
+          <li>python 3.12 · pg 16</li>
+        </ul>
+        <p class="mt-auto font-mono text-[10.5px] uppercase tracking-[0.16em] text-ghost">/uses</p>
+      </div>
+
+      <div slot="detail" class="mt-4 grid gap-4">
+        {[
+          ['editor', 'VS Code · vim bindings · One Dark Pro · JetBrains Mono'],
+          ['shell', 'zsh + oh-my-zsh · iTerm2 · Starship'],
+          ['runtime', 'Python 3.12 · Postgres 16 · Redis 7'],
+          ['testing', 'Pytest · httpx · pytest-asyncio'],
+        ].map(([k, v]) => (
+          <div class="border-l border-rule pl-4">
+            <p class="label mb-1">{k}</p>
+            <p class="font-display text-base">{v}</p>
+          </div>
+        ))}
+        <a href="/uses" class="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-ember">
+          full inventory <span>→</span>
+        </a>
+      </div>
+    </ExpandableCard>
+
+    <!-- PROJECTS -->
+    <ExpandableCard
+      number="006"
+      title="Projects"
+      kicker="Things I've shipped — picked four."
+      glyph="◈"
+      bar="sage"
+      class="col-span-12 md:col-span-7 reveal reveal-6"
+    >
+      <div slot="face" class="flex h-full min-h-[180px] flex-col">
+        <p class="display mt-2 text-[22px] leading-[1.15]">
+          {projectTitles || 'Things I’ve shipped.'}.
+        </p>
+        <p class="mt-auto font-mono text-[10.5px] uppercase tracking-[0.16em] text-ghost">
+          {allProjects.length} {allProjects.length === 1 ? 'entry' : 'entries'} · selected
+        </p>
+      </div>
+
+      <div slot="detail" class="mt-4 space-y-5">
+        {allProjects.map((p) => (
+          <article class="border-b border-rule pb-4 last:border-0">
+            <div class="flex items-baseline justify-between gap-4">
+              <h3 class="font-display text-xl">{p.title}</h3>
+              <span class="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ghost shrink-0">{p.year}</span>
+            </div>
+            {p.award_tag && <p class="mt-1 chip-accent w-fit">{p.award_tag}</p>}
+            <p class="mt-2 text-sm leading-relaxed text-parchment">{p.summary}</p>
+            <div class="mt-2.5 flex flex-wrap gap-1.5">
+              {p.stack.split(',').map((s) => s.trim()).filter(Boolean).map((s) => (
+                <span class="chip">{s}</span>
+              ))}
+              {p.link && <a href={p.link} class="chip-accent">visit ↗</a>}
+            </div>
+          </article>
+        ))}
+        <a href="/projects" class="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-ember">
+          full catalogue <span>→</span>
+        </a>
+      </div>
+    </ExpandableCard>
+
+    <!-- BADMINTON -->
+    <ExpandableCard
+      number="007"
+      title="Badminton"
+      kicker="Following the BWF tour."
+      glyph="✺"
+      bar="rose"
+      class="col-span-12 md:col-span-5 reveal reveal-7"
+    >
+      <div slot="face" class="flex h-full min-h-[180px] flex-col">
+        <p class="display mt-2 text-[22px] leading-[1.1]">
+          Next stop —<br />
+          <span class="display-italic text-rose">{tournaments[0]?.name ?? 'BWF tour'}.</span>
+        </p>
+        <ul class="mt-4 space-y-1 font-mono text-[12.5px] text-mist">
+          {players.slice(0, 4).map((p) => (
+            <li>{p.flag} {p.name.toLowerCase()}</li>
+          ))}
+        </ul>
+        <p class="mt-auto font-mono text-[10.5px] uppercase tracking-[0.16em] text-ghost">
+          {players.length} player{players.length === 1 ? '' : 's'} · {tournaments.length} tournament{tournaments.length === 1 ? '' : 's'}
+        </p>
+      </div>
+
+      <div slot="detail" class="mt-4 grid gap-6 md:grid-cols-2">
+        <div>
+          <p class="game-card__title mb-3">
+            <span class="game-card__title-bar"></span><span>players</span>
+          </p>
+          <ul class="space-y-3">
+            {players.map((p) => (
+              <li class="flex items-baseline justify-between gap-3 border-b border-rule pb-2.5">
+                <div class="flex items-baseline gap-2.5">
+                  <span class="text-lg leading-none">{p.flag}</span>
+                  <span class="font-display text-lg">{p.name}</span>
+                </div>
+                <span class="font-mono text-[10.5px] tracking-[0.16em] text-mist whitespace-nowrap">
+                  {p.country} · {p.discipline.includes('Doubles') ? 'MD' : 'MS'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p class="game-card__title mb-3">
+            <span class="game-card__title-bar"></span><span>upcoming</span>
+          </p>
+          <ul class="space-y-2">
+            {tournaments.map((t) => (
+              <li class="border-b border-rule pb-2">
+                <div class="flex items-baseline justify-between">
+                  <span class="font-display text-base">{t.name}</span>
+                  <span class="font-mono text-[10.5px] tracking-[0.16em] text-rose">{t.tier}</span>
+                </div>
+                <span class="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ghost">{t.dates.toLowerCase()}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <a href="/badminton" class="md:col-span-2 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-ember">
+          court diaries <span>→</span>
+        </a>
+      </div>
+    </ExpandableCard>
+
+  </section>
+
+  <!-- Footer flourish -->
+  <section class="mt-16 flex items-center justify-between border-t border-rule pt-6 reveal" style="animation-delay:0.7s">
+    <p class="font-mono text-[11px] uppercase tracking-[0.18em] text-ghost">
+      end of folio &nbsp;·&nbsp; press <kbd class="rounded border border-rule px-1.5 py-0.5 text-cream">esc</kbd> to close any card
+    </p>
+    <span class="flourish text-2xl">⁂</span>
+  </section>
+</Base>
