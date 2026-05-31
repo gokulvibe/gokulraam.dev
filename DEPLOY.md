@@ -46,7 +46,26 @@ Each of these takes 2-3 min. Do them in any order.
 
 ---
 
-## Step 2 — Cloudflare R2 bucket
+## Step 2 — Cloudflare R2 bucket *(optional — skip if you don't want to add a card right now)*
+
+> **Note**: Cloudflare R2 now asks for a card on file at signup for ID
+> verification (they won't charge within the free 10 GB / 1M / 10M ops tier).
+> If you'd rather not add a card right now, **skip this step entirely**:
+>
+> - **Do not** set any `R2_*` env vars on Render in Step 3
+> - The backend will auto-fall-back to local-disk storage
+> - TIL post text + all other editable content still persist in Neon ✅
+> - TIL **attachments** (uploaded files) will be wiped whenever Render
+>   restarts the container (every deploy, every wake-from-sleep, occasional
+>   maintenance). Database rows pointing at the file remain; the file body
+>   is gone.
+> - Workaround: just write text-based TILs for now, or embed external image
+>   URLs in markdown. No code change needed.
+> - When you're ready to add R2 later: come back here, do Steps 1-6 of this
+>   section, paste the env vars into Render, redeploy. Existing
+>   attachments will still be missing (they're already gone), but new ones
+>   will persist forever.
+
 
 1. https://dash.cloudflare.com → **R2** in the left sidebar → **Create bucket**.
 2. Bucket name: `gokulraam-uploads`. Location: pick closest.
@@ -80,11 +99,14 @@ Each of these takes 2-3 min. Do them in any order.
    | `SESSION_SECRET` | run: `python3 -c "import secrets; print(secrets.token_urlsafe(48))"` |
    | `FRONTEND_ORIGIN` | start with `https://gokulraam-dev.pages.dev` — we'll add the custom domain later |
    | `DATABASE_URL` | the Neon pooled connection URL from Step 1 |
-   | `R2_ACCOUNT_ID` | your Cloudflare account ID from Step 2 |
-   | `R2_ACCESS_KEY_ID` | from Step 2 |
-   | `R2_SECRET_ACCESS_KEY` | from Step 2 |
-   | `R2_BUCKET` | `gokulraam-uploads` |
-   | `R2_PUBLIC_URL` | the `https://pub-XXXX.r2.dev` URL from Step 2 |
+   | `R2_ACCOUNT_ID` | your Cloudflare account ID from Step 2 — **omit if skipping R2** |
+   | `R2_ACCESS_KEY_ID` | from Step 2 — **omit if skipping R2** |
+   | `R2_SECRET_ACCESS_KEY` | from Step 2 — **omit if skipping R2** |
+   | `R2_BUCKET` | `gokulraam-uploads` — **omit if skipping R2** |
+   | `R2_PUBLIC_URL` | the `https://pub-XXXX.r2.dev` URL from Step 2 — **omit if skipping R2** |
+
+   > If you set zero, some, or all of the `R2_*` vars: only when **all five**
+   > are set will the backend switch to R2. Otherwise it stays on local-disk.
 
 5. Click **Save Changes**. Render will redeploy automatically.
 6. Once deployment turns green (build takes ~3–5 min on first deploy), note your service URL:
@@ -130,7 +152,7 @@ Two settings need to be updated now that the URLs exist:
    (The `*` covers preview deploys for non-main branches.)
    Save → Render auto-redeploys.
 
-2. **In Cloudflare R2** → your bucket → **Settings** → **CORS Policy** → paste:
+2. **In Cloudflare R2** → your bucket → **Settings** → **CORS Policy** → paste: *(skip if you didn't do Step 2)*
    ```json
    [
      {
@@ -176,11 +198,14 @@ If something's broken: open the browser devtools → Network tab → look for `c
 4. Visit `/now` → click any item → edit → save
 5. Hard-refresh (`⌘⇧R`) → your edit is still there → Neon is wired up correctly
 
-Now upload a TIL attachment to test R2:
+Now upload a TIL attachment to test storage: *(only if you set up R2 in Step 2)*
 1. Go to `/til/postgres-explain-buffers` (or any TIL)
 2. Drop a small file into the attachments zone
 3. Refresh → attachment is still there → R2 is wired up correctly
 4. Open the attachment URL in a new tab → should redirect to `pub-XXXX.r2.dev/...`
+
+If you skipped R2: uploads still work, but disappear after a Render restart.
+That's expected — see Step 2's note for context.
 
 ---
 
