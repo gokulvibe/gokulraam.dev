@@ -1,10 +1,13 @@
 import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 import mdx from '@astrojs/mdx';
-import sitemap from '@astrojs/sitemap';
 import react from '@astrojs/react';
 import node from '@astrojs/node';
 import cloudflare from '@astrojs/cloudflare';
+// NOTE: @astrojs/sitemap removed — it doesn't currently support hybrid
+// output + Cloudflare adapter (build crashes on routes with dynamic params).
+// Re-add later with explicit customPages list, or once the upstream bug is
+// fixed (see: github.com/withastro/astro/issues — search "sitemap hybrid").
 
 // Pick the adapter at build time. Cloudflare Pages sets CF_PAGES=1 in its
 // build environment; locally we default to Node so `npm run build` keeps
@@ -17,7 +20,7 @@ export default defineConfig({
   adapter: isCloudflare
     ? cloudflare({ platformProxy: { enabled: true } })
     : node({ mode: 'standalone' }),
-  integrations: [tailwind(), mdx(), sitemap(), react()],
+  integrations: [tailwind(), mdx(), react()],
   markdown: {
     shikiConfig: {
       theme: 'github-dark-dimmed',
