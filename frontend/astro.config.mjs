@@ -1,4 +1,4 @@
-import { defineConfig } from 'astro/config';
+import { defineConfig, passthroughImageService } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 import mdx from '@astrojs/mdx';
 import react from '@astrojs/react';
@@ -22,6 +22,10 @@ export default defineConfig({
     ? node({ mode: 'standalone' })
     : cloudflare({ platformProxy: { enabled: true } }),
   integrations: [tailwind(), mdx(), react()],
+  // Cloudflare Workers can't run Sharp (native binary). We don't use Astro's
+  // <Image> component anyway — only raw <img> tags — so the passthrough
+  // service is the right fit and silences the build warning.
+  image: { service: passthroughImageService() },
   markdown: {
     shikiConfig: {
       theme: 'github-dark-dimmed',
