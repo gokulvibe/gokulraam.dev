@@ -82,38 +82,30 @@ def _parse_date(raw: str) -> datetime:
 
 
 _NOW_DEFAULTS: list[tuple[str, str, str, int]] = [
-    # (slug, label, value, order). Headline has empty label — it's the quick-text
-    # on the homepage card face. The other six are the facets shown on /now and
-    # in the expanded card detail.
-    ("headline", "", "Tuning a CSV → Postgres pipeline. 12× faster, and counting.", 0),
-    ("building", "building", "this folio. astro · fastapi · sqlite.", 1),
-    ("at-work", "at work", "csv → postgres ingestion. threading + lru_cache. 12× faster.", 2),
-    ("reading", "reading", "Designing Data-Intensive Applications — Kleppmann.", 3),
-    ("watching", "watching", "BWF Tour. Lakshya, Shi Yu Qi, Lee Zii Jia, Satwik–Chirag.", 4),
-    ("learning", "learning", "distributed systems fundamentals. async FastAPI patterns.", 5),
-    ("playing", "playing", "badminton. working on the backhand. it remains unreliable.", 6),
+    # (slug, label, value, order). Headline has empty label — it's the
+    # quick-text on the homepage card face. The other eight are the facets
+    # shown on /now (flat 2-col grid).
+    ("headline",  "",          "Tuning a CSV → Postgres pipeline. 12× faster, and counting.", 0),
+    ("building",  "building",  "this folio. astro · fastapi · sqlite.", 1),
+    ("at-work",   "at work",   "csv → postgres ingestion. threading + lru_cache. 12× faster.", 2),
+    ("reading",   "reading",   "Designing Data-Intensive Applications — Kleppmann.", 3),
+    ("watching",  "watching",  "BWF Tour. Lakshya, Shi Yu Qi, Lee Zii Jia, Satwik–Chirag.", 4),
+    ("listening", "listening", "lo-fi loops + ambient. whatever ships code.", 5),
+    ("learning",  "learning",  "distributed systems fundamentals. async FastAPI patterns.", 6),
+    ("playing",   "playing",   "badminton. working on the backhand. it remains unreliable.", 7),
+    ("following", "following", "@hnasr · @b0rk · swyx · BWF livestream feeds.", 8),
 ]
-
-# Slugs that the categorization phase briefly seeded; we now strip them
-# on boot so dev DBs from that window come back to the flat 7-card view.
-_NOW_REMOVED_SLUGS: tuple[str, ...] = ("listening", "following")
 
 
 def seed_now_items() -> int:
-    """Idempotent. Inserts any missing default rows and removes the
-    short-lived `listening` / `following` rows from the categorized
-    experiment (reverted)."""
+    """Idempotent. Inserts any missing default rows. Existing rows are
+    left untouched so admin edits survive across restarts."""
     changed = 0
     with SessionLocal() as db:
-        existing = {row.slug: row for row in db.scalars(select(NowItem)).all()}
+        existing = {row.slug for row in db.scalars(select(NowItem)).all()}
         for slug, label, value, order in _NOW_DEFAULTS:
             if slug not in existing:
                 db.add(NowItem(slug=slug, label=label, value=value, order=order))
-                changed += 1
-        for slug in _NOW_REMOVED_SLUGS:
-            row = existing.get(slug)
-            if row is not None:
-                db.delete(row)
                 changed += 1
         if changed:
             db.commit()
