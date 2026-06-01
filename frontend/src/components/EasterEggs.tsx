@@ -186,65 +186,91 @@ export default function EasterEggs() {
 
     document.addEventListener('keydown', onKey);
 
-    // ─── Triple-tap triggers (mobile-friendly) ───────────────────
-    // Virtual keyboards on phones only type into focused inputs, so the
-    // keyword path is desktop-only in practice. Mark a non-link element
-    // with `data-egg-tap="<word>"` and three taps within ~800ms fire the
-    // same effect + toast.
+    // ─── Page-wide tap counter (mobile-friendly) ─────────────────
+    // No specific target needed — tap anywhere a few times and an egg
+    // fires after a short pause. Counts:
     //
-    // Why not the brand link itself? Each tap on an <a href> tries to
-    // navigate. We use small dedicated button glyphs (the gold ◆ in the
-    // header and ◇ in the footer) so taps only count.
+    //   3 taps → snap   (photos)
+    //   5 taps → knock  (museum)
     //
-    // Currently wired:
-    //   • Header  ◆  → "snap"  (photos)
-    //   • Footer  ◇  → "knock" (museum)
-    const TAPS_NEEDED = 3;
-    const TAP_WINDOW_MS = 800;
-    const tapCleanups: Array<() => void> = [];
+    // Why pause-then-fire instead of fire-on-3rd? Because some users
+    // want museum (5) and we don't want photos to fire on the way. The
+    // count is evaluated only after the user stops tapping for ~700ms.
+    //
+    // Clicks on real interactive elements (inputs, buttons, the inline
+    // editor, expandable cards) are ignored so tap-counting never
+    // interferes with editing or admin actions. Link clicks cause a
+    // page navigation which resets state implicitly.
+    const TAP_WINDOW_MS = 700;
+    const TAP_COUNTS: Record<number, string> = { 3: 'snap', 5: 'knock' };
+    const MAX_TAP_COUNT = Math.max(...Object.keys(TAP_COUNTS).map(Number));
 
-    function bindTapCount(el: HTMLElement, word: string) {
-      const trig = TRIGGERS.find((t) => t.word === word);
-      if (!trig) return;
-      let count = 0;
-      let resetTimer: number | null = null;
+    const indicator = document.createElement('div');
+    indicator.className = 'egg-tap-indicator';
+    indicator.innerHTML = `<span>tap</span>${
+      Array.from({ length: MAX_TAP_COUNT })
+        .map(() => '<span class="egg-tap-indicator__dot"></span>')
+        .join('')
+    }`;
+    document.body.appendChild(indicator);
+    const dots = indicator.querySelectorAll<HTMLSpanElement>('.egg-tap-indicator__dot');
 
-      function fire() {
-        count = 0;
-        if (resetTimer) { window.clearTimeout(resetTimer); resetTimer = null; }
-        el.classList.remove('egg-tap--armed');
-        trig.effect?.();
-        rememberDiscovery(trig.ledgerKey);
-        showToast(trig.toast);
+    let tapCount = 0;
+    let tapResetTimer: number | null = null;
+
+    function updateIndicator() {
+      if (tapCount <= 0) {
+        indicator.classList.remove('is-on');
+        dots.forEach((d) => d.classList.remove('is-lit'));
+        return;
       }
-
-      function onClick() {
-        count += 1;
-        if (resetTimer) window.clearTimeout(resetTimer);
-        if (count >= TAPS_NEEDED) {
-          fire();
-          return;
-        }
-        // Subtle "you're getting somewhere" hint after the second tap.
-        if (count >= TAPS_NEEDED - 1) el.classList.add('egg-tap--armed');
-        resetTimer = window.setTimeout(() => {
-          count = 0;
-          el.classList.remove('egg-tap--armed');
-        }, TAP_WINDOW_MS);
-      }
-
-      el.addEventListener('click', onClick);
-      tapCleanups.push(() => el.removeEventListener('click', onClick));
+      // Show only after the 2nd tap so a single accidental click isn't
+      // surfaced — but once shown, light up every dot we've earned.
+      if (tapCount >= 2) indicator.classList.add('is-on');
+      dots.forEach((d, i) => d.classList.toggle('is-lit', i < tapCount));
     }
 
-    document.querySelectorAll<HTMLElement>('[data-egg-tap]').forEach((el) => {
-      const word = el.getAttribute('data-egg-tap');
-      if (word) bindTapCount(el, word);
-    });
+    function onPageTap(e: MouseEvent) {
+      const t = e.target as HTMLElement | null;
+      if (!t) return;
+      // Ignore taps on explicit interactive targets — they have their
+      // own handlers, and counting them surprises users editing/admin-ing.
+      // Anchor clicks cause navigation which resets state implicitly.
+      if (
+        t.closest(
+          'input, textarea, button, select, [contenteditable="true"], ' +
+            '.ProseMirror, [data-expandable], .card-clone',
+        )
+      ) {
+        return;
+      }
+      tapCount += 1;
+      if (tapCount > MAX_TAP_COUNT) tapCount = 1;  // wrap so they can keep trying
+      updateIndicator();
+      if (tapResetTimer) window.clearTimeout(tapResetTimer);
+      tapResetTimer = window.setTimeout(() => {
+        const word = TAP_COUNTS[tapCount];
+        tapCount = 0;
+        tapResetTimer = null;
+        updateIndicator();
+        if (word) {
+          const trig = TRIGGERS.find((tr) => tr.word === word);
+          if (trig) {
+            trig.effect?.();
+            rememberDiscovery(trig.ledgerKey);
+            showToast(trig.toast);
+          }
+        }
+      }, TAP_WINDOW_MS);
+    }
+
+    document.addEventListener('click', onPageTap);
 
     return () => {
       document.removeEventListener('keydown', onKey);
-      tapCleanups.forEach((c) => c());
+      document.removeEventListener('click', onPageTap);
+      if (tapResetTimer) window.clearTimeout(tapResetTimer);
+      indicator.remove();
     };
   }, []);
 

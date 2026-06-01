@@ -95,23 +95,12 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://gokulraa
 
     <div class="mx-auto max-w-6xl px-6 py-7 md:px-10 md:py-10">
       <header class="mb-14 flex items-center justify-between">
-        <div class="flex items-baseline gap-2 font-mono text-[12.5px] tracking-[0.18em] uppercase">
-          <!-- The diamond is a separate button so triple-tapping it doesn't
-               also try to navigate. Hidden from screen readers — the actual
-               brand is the anchor next to it. -->
-          <button
-            type="button"
-            class="egg-tap egg-tap--diamond text-gold"
-            data-egg-tap="snap"
-            aria-hidden
-            tabindex="-1"
-          >◆</button>
-          <a href="/" class="group flex items-baseline gap-2">
-            <span class="text-cream">gokul</span>
-            <span class="text-mist">/</span>
-            <span class="text-mist group-hover:text-cream transition-colors">raam</span>
-          </a>
-        </div>
+        <a href="/" class="group flex items-baseline gap-2 font-mono text-[12.5px] tracking-[0.18em] uppercase">
+          <span class="text-gold">◆</span>
+          <span class="text-cream">gokul</span>
+          <span class="text-mist">/</span>
+          <span class="text-mist group-hover:text-cream transition-colors">raam</span>
+        </a>
         <nav class="hidden gap-7 font-mono text-[11.5px] uppercase tracking-[0.18em] text-mist md:flex">
           <a href="/work" class="hover:text-cream transition-colors">work</a>
           <a href="/projects" class="hover:text-cream transition-colors">projects</a>
@@ -169,13 +158,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://gokulraa
       <footer class="mt-32 border-t border-rule pt-8">
         <div class="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
           <div class="flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.16em] text-ghost">
-            <button
-              type="button"
-              class="egg-tap egg-tap--diamond text-gold"
-              data-egg-tap="knock"
-              aria-hidden
-              tabindex="-1"
-            >◇</button>
+            <span class="text-gold">◇</span>
             <span>folio · mmxxvi · coimbatore</span>
           </div>
           <div class="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[11px] uppercase tracking-[0.16em] text-mist">
@@ -524,33 +507,52 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://gokulraa
         100% { transform: translate(0, 0); }
       }
 
-      /* Triple-tap easter-egg targets. Look like a plain glyph; reset
-         the button defaults so they sit inline with surrounding text. */
-      .egg-tap {
-        background: transparent;
-        border: none;
-        padding: 0;
-        margin: 0;
-        font: inherit;
-        color: inherit;
-        cursor: pointer;
-        line-height: 1;
-        -webkit-tap-highlight-color: transparent;
+      /* Tap-counter feedback chip. Appears bottom-center after the
+         second tap, fades on reset/fire. Tells the user something is
+         happening so the gesture is discoverable, not invisible. */
+      .egg-tap-indicator {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(8px);
+        z-index: 999;
+        display: flex;
+        gap: 6px;
+        padding: 8px 14px;
+        background: rgba(8, 8, 12, 0.88);
+        border: 1px solid rgba(213, 178, 117, 0.32);
+        border-radius: 999px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.18s ease, transform 0.18s ease;
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        color: rgba(213, 178, 117, 0.85);
       }
-      .egg-tap--diamond {
-        /* Larger hit area on mobile without changing the visual */
-        padding: 6px 4px;
-        margin: -6px -4px;
-        transition: transform 0.12s ease, opacity 0.12s ease;
+      .egg-tap-indicator.is-on {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
       }
-      .egg-tap--diamond:active {
-        transform: scale(0.86);
-        opacity: 0.7;
+      .egg-tap-indicator__dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(213, 178, 117, 0.3);
+        transition: background 0.15s ease, transform 0.15s ease;
       }
-      .egg-tap--diamond:focus { outline: none; }
-      .egg-tap--diamond.egg-tap--armed {
-        text-shadow: 0 0 8px rgba(213, 178, 117, 0.5);
+      .egg-tap-indicator__dot.is-lit {
+        background: #d5b275;
+        transform: scale(1.25);
       }
+      [data-theme='light'] .egg-tap-indicator {
+        background: rgba(252, 248, 240, 0.95);
+        border-color: rgba(184, 148, 85, 0.45);
+        color: #6b5a3b;
+      }
+      [data-theme='light'] .egg-tap-indicator__dot { background: rgba(184, 148, 85, 0.25); }
+      [data-theme='light'] .egg-tap-indicator__dot.is-lit { background: #b89455; }
 
       @media (prefers-reduced-motion: reduce) {
         .egg-flash.is-on { animation-duration: 0.2s; }
