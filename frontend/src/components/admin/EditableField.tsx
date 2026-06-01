@@ -46,7 +46,6 @@ export default function EditableField({
   adminOnly = false,
 }: Props) {
   const isAdmin = useIsAdmin();
-  if (adminOnly && isAdmin !== true) return null;
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(initial);
   const [draft, setDraft] = useState(initial);
@@ -94,6 +93,11 @@ export default function EditableField({
     window.addEventListener('editable:saved', onPeerSaved);
     return () => window.removeEventListener('editable:saved', onPeerSaved);
   }, [endpoint, field]);
+
+  // Admin-only fields render nothing for visitors. Placed AFTER all hooks
+  // so the hook call order is identical on every render — React enforces
+  // this and SSR throws "Invalid hook call" if hooks come after a return.
+  if (adminOnly && isAdmin !== true) return null;
 
   function cancel() {
     setDraft(value);
