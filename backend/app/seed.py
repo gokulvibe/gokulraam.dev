@@ -81,49 +81,39 @@ def _parse_date(raw: str) -> datetime:
         return datetime.now(tz=timezone.utc)
 
 
-_NOW_DEFAULTS: list[tuple[str, str, str, str, int]] = [
-    # (slug, kind, label, value, order). Headline (kind="headline") is the
-    # quick-text on the homepage card face — never rendered in the
-    # categorized /now sections. The rest are grouped by kind.
-    ("headline",  "headline",  "",          "Tuning a CSV → Postgres pipeline. 12× faster, and counting.", 0),
-    ("at-work",   "building",  "at work",   "csv → postgres ingestion. threading + lru_cache. 12× faster.", 1),
-    ("building",  "building",  "side",      "this folio. astro · fastapi · sqlite.", 2),
-    ("playing",   "playing",   "playing",   "badminton. working on the backhand. it remains unreliable.", 3),
-    ("watching",  "watching",  "watching",  "BWF Tour. Lakshya, Shi Yu Qi, Lee Zii Jia, Satwik–Chirag.", 4),
-    ("reading",   "reading",   "reading",   "Designing Data-Intensive Applications — Kleppmann.", 5),
-    ("listening", "listening", "listening", "lo-fi loops + ambient. whatever ships code.", 6),
-    ("learning",  "learning",  "learning",  "distributed systems fundamentals. async FastAPI patterns.", 7),
-    ("following", "following", "following", "@hnasr · @b0rk · swyx · BWF livestream feeds.", 8),
+_NOW_DEFAULTS: list[tuple[str, str, str, int]] = [
+    # (slug, label, value, order). Headline has empty label — it's the quick-text
+    # on the homepage card face. The other six are the facets shown on /now and
+    # in the expanded card detail.
+    ("headline", "", "Tuning a CSV → Postgres pipeline. 12× faster, and counting.", 0),
+    ("building", "building", "this folio. astro · fastapi · sqlite.", 1),
+    ("at-work", "at work", "csv → postgres ingestion. threading + lru_cache. 12× faster.", 2),
+    ("reading", "reading", "Designing Data-Intensive Applications — Kleppmann.", 3),
+    ("watching", "watching", "BWF Tour. Lakshya, Shi Yu Qi, Lee Zii Jia, Satwik–Chirag.", 4),
+    ("learning", "learning", "distributed systems fundamentals. async FastAPI patterns.", 5),
+    ("playing", "playing", "badminton. working on the backhand. it remains unreliable.", 6),
 ]
 
-# Map every existing slug back to its canonical kind so old DBs that
-# pre-date the `kind` column get back-filled correctly on first boot.
-_NOW_SLUG_TO_KIND: dict[str, str] = {slug: kind for slug, kind, _, _, _ in _NOW_DEFAULTS}
+# Slugs that the categorization phase briefly seeded; we now strip them
+# on boot so dev DBs from that window come back to the flat 7-card view.
+_NOW_REMOVED_SLUGS: tuple[str, ...] = ("listening", "following")
 
 
 def seed_now_items() -> int:
-    """Idempotent. Inserts missing default rows AND back-fills `kind` on
-    any existing row that came in pre-categorization."""
+    """Idempotent. Inserts any missing default rows and removes the
+    short-lived `listening` / `following` rows from the categorized
+    experiment (reverted)."""
     changed = 0
     with SessionLocal() as db:
         existing = {row.slug: row for row in db.scalars(select(NowItem)).all()}
-        for slug, kind, label, value, order in _NOW_DEFAULTS:
-            cur = existing.get(slug)
-            if cur is None:
-                db.add(NowItem(slug=slug, kind=kind, label=label, value=value, order=order))
+        for slug, label, value, order in _NOW_DEFAULTS:
+            if slug not in existing:
+                db.add(NowItem(slug=slug, label=label, value=value, order=order))
                 changed += 1
-            elif not (cur.kind or "").strip():
-                cur.kind = kind
-                if not (cur.label or "").strip():
-                    cur.label = label
-                changed += 1
-        # Back-fill any rows we don't seed but whose slug we know
-        for slug, row in existing.items():
-            if (row.kind or "").strip():
-                continue
-            mapped = _NOW_SLUG_TO_KIND.get(slug)
-            if mapped:
-                row.kind = mapped
+        for slug in _NOW_REMOVED_SLUGS:
+            row = existing.get(slug)
+            if row is not None:
+                db.delete(row)
                 changed += 1
         if changed:
             db.commit()

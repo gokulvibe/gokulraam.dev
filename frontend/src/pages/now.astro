@@ -11,7 +11,6 @@ const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8000';
 
 interface NowApiItem {
   slug: string;
-  kind: string;
   label: string;
   value: string;
   order: number;
@@ -28,8 +27,8 @@ try {
   backendOk = false;
 }
 
-// Headline lives on the homepage hero card; the rest are facets.
-const facets = items.filter((i) => i.kind !== 'headline').sort((a, b) => a.order - b.order);
+// Drop the "headline" — that's used on the homepage card face only.
+const facets = items.filter((i) => i.slug !== 'headline').sort((a, b) => a.order - b.order);
 
 const lastUpdate = items.length
   ? new Date(
@@ -41,30 +40,9 @@ const lastUpdate = items.length
   : null;
 const fmt = (d: Date) =>
   d.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }).toLowerCase();
-
-// Display order + small kicker copy per section. Sections without any
-// items are skipped, so missing kinds simply don't render.
-const SECTIONS: { kind: string; title: string; kicker: string }[] = [
-  { kind: 'building',  title: 'building',  kicker: 'shipping' },
-  { kind: 'playing',   title: 'playing',   kicker: 'on court' },
-  { kind: 'watching',  title: 'watching',  kicker: 'on rotation' },
-  { kind: 'reading',   title: 'reading',   kicker: 'on the desk' },
-  { kind: 'listening', title: 'listening', kicker: 'in the ears' },
-  { kind: 'learning',  title: 'learning',  kicker: 'studying' },
-  { kind: 'following', title: 'following', kicker: 'reading regularly' },
-];
-
-const byKind: Record<string, NowApiItem[]> = {};
-for (const item of facets) {
-  const k = (item.kind || 'building').toLowerCase();
-  (byKind[k] ||= []).push(item);
-}
-const orphans = facets.filter(
-  (i) => !SECTIONS.some((s) => s.kind === (i.kind || '').toLowerCase()),
-);
 ---
 
-<Base title="Now — Gokul Raam" description="What I'm building, playing, watching, reading.">
+<Base title="Now — Gokul Raam" description="What I'm currently working on, reading, watching.">
   <header class="mb-12">
     <div class="label mb-4">
       // now {lastUpdate ? `· updated ${fmt(lastUpdate)}` : ''}
@@ -73,9 +51,7 @@ const orphans = facets.filter(
       What I'm doing<br /><span class="italic text-ember">right now.</span>
     </h1>
     <p class="mt-6 max-w-xl text-mist">
-      Inspired by <a href="https://nownownow.com" class="underline">nownownow.com</a>.
-      Categorised — building, playing, watching, reading, listening, learning,
-      following. Mostly the things I'd answer if you asked me what's up.
+      Inspired by <a href="https://nownownow.com" class="underline">nownownow.com</a>. A snapshot of present-tense Gokul.
     </p>
 
     <div class="mt-8 max-w-md">
@@ -92,92 +68,20 @@ const orphans = facets.filter(
     </div>
   )}
 
-  <div class="space-y-12">
-    {SECTIONS.map((section) => {
-      const sectionItems = byKind[section.kind] ?? [];
-      if (sectionItems.length === 0) return null;
-      return (
-        <section>
-          <div class="now-section__head">
-            <div class="now-section__title">
-              <span class="text-gold">◆</span>
-              <span class="font-mono text-[11.5px] uppercase tracking-[0.22em] text-cream">
-                {section.title}
-              </span>
-              <span class="font-mono text-[10.5px] uppercase tracking-[0.18em] text-ghost">
-                · {section.kicker}
-              </span>
-            </div>
-            <span class="now-section__rule" aria-hidden></span>
-          </div>
-          <div class="mt-4 grid gap-4 md:grid-cols-2">
-            {sectionItems.map((item) => (
-              <Card>
-                {item.label && (
-                  <div class="label mb-3">// {item.label}</div>
-                )}
-                <p class="font-display text-xl leading-snug">
-                  <EditableNowItem
-                    client:load
-                    slug={item.slug}
-                    initial={item.value}
-                    multiline
-                    className="font-display"
-                  />
-                </p>
-              </Card>
-            ))}
-          </div>
-        </section>
-      );
-    })}
-
-    {orphans.length > 0 && (
-      <section>
-        <div class="now-section__head">
-          <div class="now-section__title">
-            <span class="text-gold">◆</span>
-            <span class="font-mono text-[11.5px] uppercase tracking-[0.22em] text-cream">
-              other
-            </span>
-          </div>
-          <span class="now-section__rule" aria-hidden></span>
-        </div>
-        <div class="mt-4 grid gap-4 md:grid-cols-2">
-          {orphans.map((item) => (
-            <Card>
-              <div class="label mb-3">// {item.label || item.slug}</div>
-              <p class="font-display text-xl leading-snug">
-                <EditableNowItem
-                  client:load
-                  slug={item.slug}
-                  initial={item.value}
-                  multiline
-                  className="font-display"
-                />
-              </p>
-            </Card>
-          ))}
-        </div>
-      </section>
-    )}
+  <div class="grid gap-5 md:grid-cols-2">
+    {facets.map((item) => (
+      <Card>
+        <div class="label mb-3">// {item.label}</div>
+        <p class="font-display text-xl leading-snug">
+          <EditableNowItem
+            client:load
+            slug={item.slug}
+            initial={item.value}
+            multiline
+            className="font-display"
+          />
+        </p>
+      </Card>
+    ))}
   </div>
 </Base>
-
-<style>
-  .now-section__head {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-  .now-section__title {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 10px;
-  }
-  .now-section__rule {
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(90deg, var(--rule, rgba(255,255,255,0.16)) 0%, transparent 100%);
-  }
-</style>
