@@ -1,0 +1,362 @@
+---
+import Base from '@/layouts/Base.astro';
+
+const path = Astro.url?.pathname ?? '/';
+---
+
+<Base
+  title="404 — Gokul Raam"
+  description="This page isn't here, but a few interesting ones are."
+>
+  <section class="four-oh-four">
+    <div class="foof-stage">
+      <div class="foof-num">
+        <span data-foof-digit="4">4</span><span data-foof-digit="0">0</span><span data-foof-digit="4">4</span>
+      </div>
+      <div class="foof-stamp">page not found · gokulraam.dev</div>
+    </div>
+
+    <header class="foof-head">
+      <div class="label">// nothing here</div>
+      <h1 class="display text-4xl md:text-5xl">
+        That door doesn't<br /><span class="italic text-ember">open onto anything.</span>
+      </h1>
+      <p class="foof-path">
+        you tried <code>{path}</code>
+      </p>
+    </header>
+
+    <p class="foof-blurb">
+      The page you were after either moved, never existed, or got renamed in a
+      late-night refactor. Here are some destinations that <em>do</em> work:
+    </p>
+
+    <nav class="foof-links">
+      <a href="/" class="foof-link">
+        <span class="foof-link__no">01</span>
+        <span class="foof-link__title">/ — home</span>
+        <span class="foof-link__sub">the start of the editorial card grid</span>
+      </a>
+      <a href="/work" class="foof-link">
+        <span class="foof-link__no">02</span>
+        <span class="foof-link__title">/work — résumé long-form</span>
+        <span class="foof-link__sub">where I've been, what I shipped</span>
+      </a>
+      <a href="/til" class="foof-link">
+        <span class="foof-link__no">03</span>
+        <span class="foof-link__title">/til — today I learnt</span>
+        <span class="foof-link__sub">my notes from the trenches</span>
+      </a>
+      <a href="/logbook" class="foof-link">
+        <span class="foof-link__no">04</span>
+        <span class="foof-link__title">/logbook — short observations</span>
+        <span class="foof-link__sub">briefer than til, longer than a tweet</span>
+      </a>
+    </nav>
+
+    <div class="foof-typer">
+      <label class="foof-typer__label" for="foof-input">
+        or type a destination
+      </label>
+      <input
+        id="foof-input"
+        type="text"
+        placeholder="home · til · projects · photos · …"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <span class="foof-typer__hint" id="foof-hint">↵ to go</span>
+    </div>
+
+    <p class="foof-footer-note">
+      If a search engine led you here, mind <a href="mailto:dev.gokulraam@gmail.com?subject=broken%20link">dropping me a note</a>?
+      I'd like to fix it.
+    </p>
+  </section>
+</Base>
+
+<style>
+  .four-oh-four {
+    max-width: 720px;
+    margin: 20px auto 60px;
+    padding: 0 4px;
+  }
+
+  /* Display 404 numeral as the visual hero */
+  .foof-stage {
+    text-align: center;
+    margin-bottom: 36px;
+    position: relative;
+    user-select: none;
+  }
+  .foof-num {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 300;
+    font-size: clamp(96px, 22vw, 200px);
+    line-height: 0.85;
+    letter-spacing: -0.05em;
+    color: var(--cream, #f5efe3);
+    display: inline-flex;
+    gap: 6px;
+  }
+  .foof-num span {
+    background: linear-gradient(180deg, var(--cream, #f5efe3), rgba(245,239,227,0.32));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    cursor: pointer;
+    transition: transform 0.15s, color 0.15s;
+  }
+  .foof-num span:hover {
+    transform: translateY(-3px);
+  }
+  .foof-stamp {
+    margin-top: 6px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.32em;
+    color: rgba(245,239,227,0.32);
+  }
+
+  .foof-head { margin-bottom: 22px; }
+  .foof-path {
+    margin-top: 14px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 12.5px;
+    color: rgba(245,239,227,0.55);
+  }
+  .foof-path code {
+    color: #d5b275;
+    background: rgba(213,178,117,0.08);
+    padding: 2px 6px;
+    border-radius: 2px;
+  }
+
+  .foof-blurb {
+    color: var(--mist, rgba(245,239,227,0.7));
+    margin-bottom: 24px;
+    line-height: 1.55;
+  }
+
+  .foof-links {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  @media (min-width: 640px) {
+    .foof-links { grid-template-columns: 1fr 1fr; }
+  }
+  .foof-link {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    grid-template-rows: auto auto;
+    align-items: baseline;
+    gap: 4px 14px;
+    text-decoration: none;
+    border: 1px solid var(--rule, rgba(255,255,255,0.1));
+    padding: 14px 16px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.01);
+    transition: border-color 0.2s, transform 0.2s, background 0.2s;
+  }
+  .foof-link:hover {
+    border-color: rgba(213,178,117,0.5);
+    transform: translateY(-1px);
+    background: rgba(213,178,117,0.04);
+  }
+  .foof-link__no {
+    grid-row: 1 / 3;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    color: #d5b275;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    padding-top: 3px;
+  }
+  .foof-link__title {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 12.5px;
+    color: var(--cream, #f5efe3);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+  .foof-link__sub {
+    font-family: 'Fraunces', Georgia, serif;
+    font-style: italic;
+    color: rgba(245,239,227,0.55);
+    font-size: 14px;
+  }
+
+  .foof-typer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--rule, rgba(255,255,255,0.1));
+    border-left: 2px solid #d5b275;
+    background: rgba(255,255,255,0.01);
+    border-radius: 2px;
+    margin-bottom: 28px;
+  }
+  .foof-typer__label {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: rgba(245,239,227,0.65);
+    flex-shrink: 0;
+  }
+  .foof-typer input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--cream, #f5efe3);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 13px;
+    padding: 4px 0;
+    outline: none;
+  }
+  .foof-typer input::placeholder {
+    color: rgba(245,239,227,0.3);
+  }
+  .foof-typer__hint {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: rgba(245,239,227,0.4);
+  }
+  .foof-typer__hint.is-found { color: #8eb586; }
+  .foof-typer__hint.is-miss { color: #e57373; }
+
+  .foof-footer-note {
+    color: rgba(245,239,227,0.5);
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  .foof-footer-note a {
+    color: #d5b275;
+    text-decoration: underline;
+    text-decoration-color: rgba(213,178,117,0.3);
+    text-underline-offset: 3px;
+  }
+  .foof-footer-note a:hover {
+    text-decoration-color: #d5b275;
+  }
+
+  /* Small surprise — clicking each digit of 404 in 4-0-4 order reveals
+     a quiet "you found it" pulse. Implemented purely with `.is-armed`
+     classes added by JS below. */
+  .foof-num span.is-glow {
+    color: #d5b275 !important;
+    -webkit-text-fill-color: #d5b275 !important;
+    text-shadow: 0 0 18px rgba(213,178,117,0.4);
+  }
+
+  /* Light theme tweaks */
+  :global([data-theme='light']) .foof-num span {
+    background: linear-gradient(180deg, #1c1a14, rgba(28,26,20,0.32));
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+  :global([data-theme='light']) .foof-stamp { color: rgba(28,26,20,0.4); }
+  :global([data-theme='light']) .foof-path { color: rgba(28,26,20,0.6); }
+  :global([data-theme='light']) .foof-link__title { color: #1c1a14; }
+  :global([data-theme='light']) .foof-link__sub { color: rgba(28,26,20,0.6); }
+  :global([data-theme='light']) .foof-typer__label { color: rgba(28,26,20,0.65); }
+  :global([data-theme='light']) .foof-typer input { color: #1c1a14; }
+  :global([data-theme='light']) .foof-footer-note { color: rgba(28,26,20,0.6); }
+</style>
+
+<script is:inline>
+  (() => {
+    // ─── Type-a-destination ───────────────────────────────────
+    const ROUTES = {
+      home: '/', start: '/', '/': '/',
+      work: '/work', resume: '/resume.pdf', cv: '/resume.pdf',
+      projects: '/projects', project: '/projects',
+      til: '/til', notes: '/til',
+      now: '/now',
+      logbook: '/logbook', log: '/logbook', journal: '/logbook',
+      photos: '/photos', gallery: '/photos',
+      guestbook: '/guestbook', sign: '/guestbook',
+      badminton: '/badminton',
+      uses: '/uses',
+      museum: '/museum/enter',
+    };
+
+    const input = document.getElementById('foof-input');
+    const hint = document.getElementById('foof-hint');
+    if (input && hint) {
+      input.focus();
+      input.addEventListener('input', () => {
+        const v = input.value.trim().toLowerCase().replace(/^\//, '');
+        if (!v) { hint.textContent = '↵ to go'; hint.className = 'foof-typer__hint'; return; }
+        if (ROUTES[v]) {
+          hint.textContent = '→ ' + ROUTES[v];
+          hint.className = 'foof-typer__hint is-found';
+        } else {
+          hint.textContent = "i don't have that one";
+          hint.className = 'foof-typer__hint is-miss';
+        }
+      });
+      input.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        const v = input.value.trim().toLowerCase().replace(/^\//, '');
+        if (ROUTES[v]) {
+          window.location.href = ROUTES[v];
+        } else {
+          hint.textContent = 'still nowhere — try one of the cards above';
+          hint.className = 'foof-typer__hint is-miss';
+        }
+      });
+    }
+
+    // ─── Quiet click puzzle: 4 → 0 → 4 ──────────────────────
+    // Clicking the three digits in 4-0-4 order makes them glow gold and
+    // the cards above pulse. Nothing else happens — just a small reward
+    // for paying attention.
+    const digits = Array.from(document.querySelectorAll('[data-foof-digit]'));
+    const expected = ['4', '0', '4'];
+    let cursor = 0;
+    digits.forEach((d, i) => {
+      d.addEventListener('click', () => {
+        if (d.getAttribute('data-foof-digit') !== expected[cursor]) {
+          digits.forEach((dd) => dd.classList.remove('is-glow'));
+          cursor = 0;
+          return;
+        }
+        // Need to click them in order, but each in sequence
+        const idx = cursor;
+        // The 1st and 3rd digit are both "4" — they must be different elements
+        if (idx === 0 && i !== 0) { cursor = 0; return; }
+        if (idx === 1 && i !== 1) { cursor = 0; return; }
+        if (idx === 2 && i !== 2) { cursor = 0; return; }
+        d.classList.add('is-glow');
+        cursor += 1;
+        if (cursor === expected.length) {
+          // All three lit — small reward: a fast subtle pulse on the cards
+          document.querySelectorAll('.foof-link').forEach((el, j) => {
+            setTimeout(() => {
+              el.animate(
+                [
+                  { transform: 'translateY(0)', boxShadow: '0 0 0 rgba(213,178,117,0)' },
+                  { transform: 'translateY(-3px)', boxShadow: '0 6px 18px rgba(213,178,117,0.2)' },
+                  { transform: 'translateY(0)', boxShadow: '0 0 0 rgba(213,178,117,0)' },
+                ],
+                { duration: 700, easing: 'cubic-bezier(.4,1.2,.4,1)' },
+              );
+            }, j * 90);
+          });
+          setTimeout(() => {
+            digits.forEach((dd) => dd.classList.remove('is-glow'));
+            cursor = 0;
+          }, 2200);
+        }
+      });
+    });
+  })();
+</script>
