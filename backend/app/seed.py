@@ -18,8 +18,10 @@ from app.db import SessionLocal
 from app.models import (
     BadmintonPlayer,
     BadmintonTournament,
+    Book,
     MuseumExhibit,
     NowItem,
+    Photo,
     Profile,
     ProfileStat,
     Project,
@@ -80,29 +82,34 @@ def _parse_date(raw: str) -> datetime:
 
 
 _NOW_DEFAULTS: list[tuple[str, str, str, int]] = [
-    # (slug, label, value, order). Headline has empty label — it's the quick-text
-    # on the homepage card face. The other six are the facets shown on /now and
-    # in the expanded card detail.
-    ("headline", "", "Tuning a CSV → Postgres pipeline. 12× faster, and counting.", 0),
-    ("building", "building", "this folio. astro · fastapi · sqlite.", 1),
-    ("at-work", "at work", "csv → postgres ingestion. threading + lru_cache. 12× faster.", 2),
-    ("reading", "reading", "Designing Data-Intensive Applications — Kleppmann.", 3),
-    ("watching", "watching", "BWF Tour. Lakshya, Shi Yu Qi, Lee Zii Jia, Satwik–Chirag.", 4),
-    ("learning", "learning", "distributed systems fundamentals. async FastAPI patterns.", 5),
-    ("playing", "playing", "badminton. working on the backhand. it remains unreliable.", 6),
+    # (slug, label, value, order). Headline has empty label — it's the
+    # quick-text on the homepage card face. The other eight are the facets
+    # shown on /now (flat 2-col grid).
+    ("headline",  "",          "Tuning a CSV → Postgres pipeline. 12× faster, and counting.", 0),
+    ("building",  "building",  "this folio. astro · fastapi · sqlite.", 1),
+    ("at-work",   "at work",   "csv → postgres ingestion. threading + lru_cache. 12× faster.", 2),
+    ("reading",   "reading",   "Designing Data-Intensive Applications — Kleppmann.", 3),
+    ("watching",  "watching",  "BWF Tour. Lakshya, Shi Yu Qi, Lee Zii Jia, Satwik–Chirag.", 4),
+    ("listening", "listening", "lo-fi loops + ambient. whatever ships code.", 5),
+    ("learning",  "learning",  "distributed systems fundamentals. async FastAPI patterns.", 6),
+    ("playing",   "playing",   "badminton. working on the backhand. it remains unreliable.", 7),
+    ("following", "following", "@hnasr · @b0rk · swyx · BWF livestream feeds.", 8),
 ]
 
 
 def seed_now_items() -> int:
-    """Returns the number of inserted rows. Only seeds when the table is empty."""
+    """Idempotent. Inserts any missing default rows. Existing rows are
+    left untouched so admin edits survive across restarts."""
+    changed = 0
     with SessionLocal() as db:
-        existing = db.scalar(select(NowItem.id).limit(1))
-        if existing is not None:
-            return 0
+        existing = {row.slug for row in db.scalars(select(NowItem)).all()}
         for slug, label, value, order in _NOW_DEFAULTS:
-            db.add(NowItem(slug=slug, label=label, value=value, order=order))
-        db.commit()
-        return len(_NOW_DEFAULTS)
+            if slug not in existing:
+                db.add(NowItem(slug=slug, label=label, value=value, order=order))
+                changed += 1
+        if changed:
+            db.commit()
+    return changed
 
 
 # (category, slug, name, note). Order is implied by list position; we'll
@@ -520,6 +527,79 @@ _MUSEUM_DEFAULTS: list[tuple[str, str, str, str, str, str, str]] = [
         "",
     ),
 ]
+
+
+_BOOK_DEFAULTS: list[tuple[str, str, str, str, str, str]] = [
+    # (slug, title, author, status, year, note)
+    ("ddia", "Designing Data-Intensive Applications", "Martin Kleppmann",
+     "reading", "2017",
+     "The book every backend engineer recommends. Living up to the hype."),
+    ("the-go-programming-language", "The Go Programming Language", "Donovan & Kernighan",
+     "want", "2015",
+     "Replace this with anything you want to read next."),
+    ("the-pragmatic-programmer", "The Pragmatic Programmer", "Hunt & Thomas",
+     "finished", "1999",
+     "Read it twice — first time too early, second time it clicked."),
+    ("zero-to-one", "Zero to One", "Peter Thiel",
+     "finished", "2014",
+     "Counterintuitive in places, prescient in others."),
+    ("placeholder-1", "— add a book", "— author",
+     "reading", "",
+     "Sign in as admin and click any field to edit. Cover URLs can be any public image link."),
+]
+
+
+# Sample photos sourced from picsum.photos (stable, license-free). Replace
+# with real photos by admin-editing the url field on each card. Mix of
+# landscape + portrait aspect ratios so the camera-roll layout reads as
+# real photography, not a uniform grid.
+_PHOTO_DEFAULTS: list[tuple[str, str, str, str]] = [
+    # (slug, url, caption, taken_at)
+    ("yelagiri-dawn",    "https://picsum.photos/id/1018/1600/1000",
+     "Yelagiri at dawn",              "Mar 2026"),
+    ("cauvery-evening",  "https://picsum.photos/id/1015/900/1200",
+     "Cauvery, late afternoon",       "Jan 2026"),
+    ("western-ghats",    "https://picsum.photos/id/1019/1400/900",
+     "Western Ghats green",           "Feb 2026"),
+    ("first-coffee",     "https://picsum.photos/id/431/900/1200",
+     "First coffee · before the court", "Apr 2026"),
+    ("last-game",        "https://picsum.photos/id/1062/1600/1000",
+     "Last game of the night",        "May 2026"),
+    ("apartment-walk",   "https://picsum.photos/id/180/1200/800",
+     "Walk around the apartment",     "May 2026"),
+    ("ooty-monsoon",     "https://picsum.photos/id/164/1400/900",
+     "Ooty · monsoon",                "Aug 2025"),
+    ("desk-1am",         "https://picsum.photos/id/119/1200/800",
+     "Desk · 1am, almost shipped it", "Apr 2026"),
+]
+
+
+def seed_photos() -> int:
+    """Seed sample photos. Reseeds if the only rows present are empty
+    placeholders (so old empty rows are replaced once)."""
+    with SessionLocal() as db:
+        rows = list(db.scalars(select(Photo)).all())
+        if rows and any((r.url or "").strip() for r in rows):
+            return 0  # admin has real content — leave it alone
+        for r in rows:
+            db.delete(r)  # wipe empty placeholders
+        for order, (slug, url, caption, taken_at) in enumerate(_PHOTO_DEFAULTS):
+            db.add(Photo(slug=slug, url=url, caption=caption, taken_at=taken_at, order=order))
+        db.commit()
+        return len(_PHOTO_DEFAULTS)
+
+
+def seed_books() -> int:
+    with SessionLocal() as db:
+        if db.scalar(select(Book.id).limit(1)) is not None:
+            return 0
+        for order, (slug, title, author, status, year, note) in enumerate(_BOOK_DEFAULTS):
+            db.add(Book(
+                slug=slug, title=title, author=author, status=status,
+                year=year, note=note, order=order,
+            ))
+        db.commit()
+        return len(_BOOK_DEFAULTS)
 
 
 def seed_museum() -> int:

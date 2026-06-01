@@ -1,0 +1,439 @@
+---
+export const prerender = false;
+
+import Base from '@/layouts/Base.astro';
+import EditableField from '@/components/admin/EditableField';
+
+const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8000';
+
+interface PhotoRow {
+  id: number;
+  slug: string;
+  url: string;
+  caption: string;
+  taken_at: string;
+  order: number;
+}
+
+let photos: PhotoRow[] = [];
+let backendOk = true;
+try {
+  const res = await fetch(`${API_BASE}/api/photos`);
+  if (res.ok) photos = await res.json();
+  else backendOk = false;
+} catch {
+  backendOk = false;
+}
+
+const total = photos.length;
+---
+
+<Base title="Photos — Gokul Raam" description="A camera roll of moments worth keeping.">
+  <header class="mb-10">
+    <div class="label mb-4">// photos · camera roll</div>
+    <h1 class="display text-5xl md:text-6xl">
+      A camera<br /><span class="italic text-ember">roll.</span>
+    </h1>
+    <p class="mt-6 max-w-xl text-mist">
+      Moments I bothered to take a photo of. Wheel to pan sideways. Click any
+      frame to enlarge — arrow keys advance.
+    </p>
+  </header>
+
+  {!backendOk && (
+    <div class="card border-rose/30 bg-rose/5 mb-8">
+      <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-rose mb-2">// backend offline</p>
+      <p class="text-sm text-parchment">The API at <code class="font-mono">{API_BASE}</code> is unreachable.</p>
+    </div>
+  )}
+
+  <section class="film-strip" aria-label="Camera roll">
+    <div class="film-strip__sprockets" aria-hidden></div>
+    <div class="film-strip__rail" id="film-rail">
+      {photos.map((p, idx) => (
+        <figure
+          class="film-frame"
+          data-idx={idx}
+          data-url={p.url}
+          data-caption={p.caption}
+          data-taken={p.taken_at}
+        >
+          {p.url ? (
+            <img src={p.url} alt={p.caption || `frame ${idx + 1}`} loading="lazy" />
+          ) : (
+            <div class="film-frame__empty">
+              <span>no image</span>
+              <span class="film-frame__empty-sub">admin: paste a url ↓</span>
+            </div>
+          )}
+          <figcaption class="film-frame__cap">
+            <span class="film-frame__no">{String(idx + 1).padStart(2, '0')}</span>
+            <span class="film-frame__text">
+              <EditableField
+                client:load
+                endpoint={`/api/photos/${p.id}`}
+                field="caption"
+                initial={p.caption}
+                placeholder="caption"
+              />
+            </span>
+            <span class="film-frame__date">
+              <EditableField
+                client:load
+                endpoint={`/api/photos/${p.id}`}
+                field="taken_at"
+                initial={p.taken_at}
+                placeholder="when"
+              />
+            </span>
+          </figcaption>
+          <div class="film-frame__urledit">
+            <EditableField
+              client:load
+              endpoint={`/api/photos/${p.id}`}
+              field="url"
+              initial={p.url}
+              placeholder="image url"
+              adminOnly
+            />
+          </div>
+        </figure>
+      ))}
+    </div>
+    <div class="film-strip__sprockets" aria-hidden></div>
+    <div class="film-strip__indicator" id="film-indicator">
+      01 / {String(total || 1).padStart(2, '0')}
+    </div>
+  </section>
+</Base>
+
+<style>
+  .film-strip {
+    position: relative;
+    margin: 0 calc(50% - 50vw);
+    padding: 22px 0 30px;
+    background: #050507;
+    border-top: 1px solid var(--rule, rgba(255,255,255,0.08));
+    border-bottom: 1px solid var(--rule, rgba(255,255,255,0.08));
+    overflow: hidden;
+  }
+  .film-strip__sprockets {
+    height: 14px;
+    background-image: radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.12) 2.2px,
+      transparent 2.6px
+    );
+    background-size: 26px 14px;
+    background-repeat: repeat-x;
+    background-position: center;
+    margin: 4px 0;
+  }
+  .film-strip__rail {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 14px max(6vw, 32px);
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: var(--rule, rgba(255,255,255,0.16)) transparent;
+  }
+  .film-strip__rail::-webkit-scrollbar { height: 6px; }
+  .film-strip__rail::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.16);
+    border-radius: 3px;
+  }
+  .film-strip__rail::-webkit-scrollbar-track { background: transparent; }
+
+  .film-frame {
+    flex: 0 0 auto;
+    height: clamp(360px, 64vh, 620px);
+    background: #0d0d11;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    position: relative;
+    overflow: hidden;
+    cursor: zoom-in;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    margin: 0;
+  }
+  .film-frame:hover {
+    transform: translateY(-3px);
+    border-color: rgba(213, 178, 117, 0.45);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.45);
+  }
+  .film-frame img {
+    height: 100%;
+    width: auto;
+    display: block;
+    object-fit: cover;
+  }
+  .film-frame__empty {
+    height: 100%;
+    width: 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: rgba(255, 255, 255, 0.55);
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    text-align: center;
+    padding: 20px;
+  }
+  .film-frame__empty-sub {
+    font-size: 9.5px;
+    color: rgba(255, 255, 255, 0.3);
+    letter-spacing: 0.16em;
+  }
+
+  .film-frame__cap {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 36px 14px 12px;
+    color: #f5efe3;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.78) 70%);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    align-items: baseline;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.22s, transform 0.22s;
+  }
+  .film-frame:hover .film-frame__cap,
+  .film-frame:focus-within .film-frame__cap {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .film-frame__no { color: #d5b275; }
+  .film-frame__text { color: #f5efe3; }
+  .film-frame__date { color: rgba(245, 239, 227, 0.55); margin-left: auto; }
+
+  /* Admin-only URL editor strip on top of frame */
+  .film-frame__urledit {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    right: 6px;
+    padding: 6px 8px;
+    background: rgba(0, 0, 0, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 2px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.7);
+    max-height: 60px;
+    overflow: hidden;
+  }
+  /* Hide if it ends up empty (non-admin) */
+  .film-frame__urledit:empty { display: none; }
+
+  .film-strip__indicator {
+    position: absolute;
+    bottom: 8px;
+    right: 24px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    pointer-events: none;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 4px 10px;
+    border-radius: 2px;
+  }
+
+  /* Light theme tweaks */
+  :global([data-theme='light']) .film-strip { background: #f6f1e6; }
+  :global([data-theme='light']) .film-frame { background: #ece6d7; border-color: rgba(0,0,0,0.08); }
+  :global([data-theme='light']) .film-frame__empty { color: rgba(0,0,0,0.55); }
+  :global([data-theme='light']) .film-strip__sprockets {
+    background-image: radial-gradient(circle, rgba(0,0,0,0.22) 2.2px, transparent 2.6px);
+  }
+  :global([data-theme='light']) .film-strip__indicator {
+    color: rgba(0,0,0,0.6); background: rgba(255,255,255,0.7);
+  }
+
+  /* Lightbox (vanilla, injected by script) */
+  :global(.lightbox) {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.96);
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 56px 80px;
+  }
+  :global(.lightbox.is-open) { display: flex; }
+  :global(.lightbox img) {
+    max-width: 90vw;
+    max-height: 78vh;
+    object-fit: contain;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+  }
+  :global(.lightbox__cap) {
+    margin-top: 22px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 11.5px;
+    color: #f5efe3;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    display: flex;
+    gap: 14px;
+    align-items: baseline;
+  }
+  :global(.lightbox__cap .lightbox__no) { color: #d5b275; }
+  :global(.lightbox__cap .lightbox__date) { color: rgba(245,239,227,0.55); }
+  :global(.lightbox__close) {
+    position: absolute;
+    top: 22px;
+    right: 26px;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.18);
+    color: #f5efe3;
+    padding: 6px 14px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    cursor: pointer;
+  }
+  :global(.lightbox__close:hover) { border-color: #d5b275; color: #d5b275; }
+  :global(.lightbox__nav) {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: #f5efe3;
+    font-size: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  :global(.lightbox__nav:hover) { background: rgba(255,255,255,0.12); }
+  :global(.lightbox__nav--prev) { left: 24px; }
+  :global(.lightbox__nav--next) { right: 24px; }
+</style>
+
+<script is:inline>
+  (() => {
+    const rail = document.getElementById('film-rail');
+    const indicator = document.getElementById('film-indicator');
+    if (!rail) return;
+
+    const frames = Array.from(rail.querySelectorAll('.film-frame'));
+
+    // 1. Wheel-to-horizontal. Vertical-dominant wheel events become horizontal pans.
+    rail.addEventListener(
+      'wheel',
+      (e) => {
+        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+          e.preventDefault();
+          rail.scrollBy({ left: e.deltaY * 1.4, behavior: 'auto' });
+        }
+      },
+      { passive: false },
+    );
+
+    // 2. Live indicator showing nearest frame to viewport center
+    function updateIndicator() {
+      if (!indicator || !frames.length) return;
+      const rect = rail.getBoundingClientRect();
+      const center = rect.left + rect.width / 2;
+      let best = 0;
+      let bestDist = Infinity;
+      frames.forEach((f, i) => {
+        const r = f.getBoundingClientRect();
+        const d = Math.abs(r.left + r.width / 2 - center);
+        if (d < bestDist) {
+          bestDist = d;
+          best = i;
+        }
+      });
+      indicator.textContent =
+        String(best + 1).padStart(2, '0') + ' / ' + String(frames.length).padStart(2, '0');
+    }
+    rail.addEventListener('scroll', updateIndicator, { passive: true });
+    requestAnimationFrame(updateIndicator);
+
+    // 3. Lightbox — built once, reused across frames
+    const lb = document.createElement('div');
+    lb.className = 'lightbox';
+    lb.innerHTML = `
+      <button class="lightbox__close" type="button" aria-label="Close">esc · close</button>
+      <button class="lightbox__nav lightbox__nav--prev" type="button" aria-label="Previous photo">‹</button>
+      <button class="lightbox__nav lightbox__nav--next" type="button" aria-label="Next photo">›</button>
+      <img alt="" />
+      <div class="lightbox__cap">
+        <span class="lightbox__no"></span>
+        <span class="lightbox__text"></span>
+        <span class="lightbox__date"></span>
+      </div>
+    `;
+    document.body.appendChild(lb);
+    const lbImg = lb.querySelector('img');
+    const lbNo = lb.querySelector('.lightbox__no');
+    const lbText = lb.querySelector('.lightbox__text');
+    const lbDate = lb.querySelector('.lightbox__date');
+    let cur = 0;
+
+    function openAt(i) {
+      const f = frames[i];
+      if (!f) return;
+      const url = f.getAttribute('data-url');
+      if (!url) return;
+      cur = i;
+      lbImg.src = url;
+      lbImg.alt = f.getAttribute('data-caption') || '';
+      lbNo.textContent = String(i + 1).padStart(2, '0');
+      lbText.textContent = f.getAttribute('data-caption') || '';
+      lbDate.textContent = f.getAttribute('data-taken') || '';
+      lb.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    }
+    function close() {
+      lb.classList.remove('is-open');
+      document.body.style.overflow = '';
+    }
+    function next() { openAt((cur + 1) % frames.length); }
+    function prev() { openAt((cur - 1 + frames.length) % frames.length); }
+
+    frames.forEach((f, i) => {
+      f.addEventListener('click', (e) => {
+        // Don't open lightbox when an inline edit input is clicked
+        if (e.target.closest('.editable-input') || e.target.closest('.editable')) return;
+        if (e.target.closest('.film-frame__urledit')) return;
+        openAt(i);
+      });
+    });
+    lb.querySelector('.lightbox__close').addEventListener('click', close);
+    lb.querySelector('.lightbox__nav--next').addEventListener('click', next);
+    lb.querySelector('.lightbox__nav--prev').addEventListener('click', prev);
+    lb.addEventListener('click', (e) => {
+      if (e.target === lb) close();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (!lb.classList.contains('is-open')) return;
+      if (e.key === 'Escape') close();
+      if (e.key === 'ArrowRight') next();
+      if (e.key === 'ArrowLeft') prev();
+    });
+  })();
+</script>

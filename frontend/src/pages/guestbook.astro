@@ -1,0 +1,19 @@
+---
+import Base from '@/layouts/Base.astro';
+import Guestbook from '@/components/Guestbook';
+---
+
+<Base title="Guestbook — Gokul Raam" description="Leave a note, drop a thought, sign the wall.">
+  <header class="mb-12">
+    <div class="label mb-4">// guestbook</div>
+    <h1 class="display text-5xl md:text-6xl">
+      Leave<br /><span class="italic text-ember">a note.</span>
+    </h1>
+    <p class="mt-6 max-w-xl text-mist">
+      Notes from strangers, friends, and the occasional bot.
+      Anonymous is fine. Anything mean gets hidden.
+    </p>
+  </header>
+
+  <Guestbook client:load />
+</Base>

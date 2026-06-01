@@ -60,6 +60,7 @@ class NowItemOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     slug: str
+    kind: str
     label: str
     value: str
     order: int
@@ -374,3 +375,63 @@ class MuseumExhibitUpdate(BaseModel):
     body_md: str | None = None
     photo_url: str | None = Field(default=None, max_length=400)
     photo_caption: str | None = Field(default=None, max_length=160)
+
+
+# ─── Guestbook ────────────────────────────────────────────────
+
+
+class GuestbookEntryOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    message: str
+    created_at: datetime
+
+
+class PhotoOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    slug: str
+    url: str
+    caption: str
+    taken_at: str
+    order: int
+
+
+class PhotoUpdate(BaseModel):
+    url: str | None = Field(default=None, max_length=400)
+    caption: str | None = Field(default=None, max_length=300)
+    taken_at: str | None = Field(default=None, max_length=40)
+
+
+class BookOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    slug: str
+    title: str
+    author: str
+    status: str
+    year: str
+    link: str
+    cover_url: str
+    note: str
+    order: int
+
+
+class BookUpdate(BaseModel):
+    title: str | None = Field(default=None, max_length=200)
+    author: str | None = Field(default=None, max_length=120)
+    status: str | None = Field(default=None, max_length=40)
+    year: str | None = Field(default=None, max_length=20)
+    link: str | None = Field(default=None, max_length=400)
+    cover_url: str | None = Field(default=None, max_length=400)
+    note: str | None = None
+
+
+class GuestbookEntryIn(BaseModel):
+    name: str = Field(default="", max_length=80)
+    message: str = Field(min_length=1, max_length=1000)
+    # Honeypot field — real browsers leave this empty; bots fill every input.
+    # Renamed to something innocuous so it doesn't look like a honeypot in DOM.
+    website: str = Field(default="", max_length=200)

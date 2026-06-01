@@ -101,6 +101,73 @@ export const museum = {
     }),
 };
 
+// ─── Photos ───────────────────────────────────────────────────
+
+export interface Photo {
+  id: number;
+  slug: string;
+  url: string;
+  caption: string;
+  taken_at: string;
+  order: number;
+}
+
+export const photos = {
+  list: () => request<Photo[]>('/api/photos'),
+  update: (id: number, patch: Partial<Pick<Photo, 'url' | 'caption' | 'taken_at'>>) =>
+    request<Photo>(`/api/photos/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+};
+
+// ─── Books ────────────────────────────────────────────────────
+
+export interface Book {
+  id: number;
+  slug: string;
+  title: string;
+  author: string;
+  status: 'reading' | 'finished' | 'want' | string;
+  year: string;
+  link: string;
+  cover_url: string;
+  note: string;
+  order: number;
+}
+
+export const books = {
+  list: () => request<Book[]>('/api/books'),
+  update: (
+    id: number,
+    patch: Partial<Pick<Book, 'title' | 'author' | 'status' | 'year' | 'link' | 'cover_url' | 'note'>>,
+  ) =>
+    request<Book>(`/api/books/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+};
+
+// ─── Guestbook ────────────────────────────────────────────────
+
+export interface GuestbookEntry {
+  id: number;
+  name: string;
+  message: string;
+  created_at: string;
+}
+
+export const guestbook = {
+  list: () => request<GuestbookEntry[]>('/api/guestbook'),
+  post: (body: { name: string; message: string; website: string }) =>
+    request<GuestbookEntry>('/api/guestbook', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  remove: (id: number) =>
+    request<void>(`/api/guestbook/${id}`, { method: 'DELETE' }),
+};
+
 // ─── TIL ───────────────────────────────────────────────────────
 
 export const til = {
@@ -147,6 +214,7 @@ export function uploadUrl(stored_path: string): string {
 
 export interface NowItem {
   slug: string;
+  kind: string;
   label: string;
   value: string;
   order: number;

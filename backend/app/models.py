@@ -43,13 +43,15 @@ class TilAttachment(Base):
 
 
 class NowItem(Base):
-    """Fixed-slug rows for the /now section. Slug + label are read-only;
-    only `value` is editable. Seven seeded entries: headline + 6 facets.
-    """
+    """Fixed-slug rows for the /now section. `kind` groups items into
+    sections (building / playing / watching / reading / listening /
+    learning / following / headline). Slug + label + kind are seeded and
+    stable; only `value` is editable inline."""
     __tablename__ = "now_items"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     slug: Mapped[str] = mapped_column(String(40), unique=True, index=True)
+    kind: Mapped[str] = mapped_column(String(40), default="", index=True)
     label: Mapped[str] = mapped_column(String(40))
     value: Mapped[str] = mapped_column(Text)
     order: Mapped[int] = mapped_column(Integer, default=0)
@@ -332,6 +334,60 @@ class StatusPing(Base):
     detail: Mapped[str] = mapped_column(String(200), default="")
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Photo(Base):
+    """A single photo on /photos. External image URL (no R2 dependency).
+    Captions, taken-at, and url are all admin-editable inline."""
+    __tablename__ = "photos"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    slug: Mapped[str] = mapped_column(String(80), unique=True, index=True)
+    url: Mapped[str] = mapped_column(String(400), default="")
+    caption: Mapped[str] = mapped_column(String(300), default="")
+    taken_at: Mapped[str] = mapped_column(String(40), default="")  # free-form (e.g. "Coimbatore · Mar 2025")
+    order: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+
+class Book(Base):
+    """A book on /bookshelf. Status discriminates the section it appears in.
+    All fields editable inline by admin."""
+    __tablename__ = "books"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    slug: Mapped[str] = mapped_column(String(80), unique=True, index=True)
+    title: Mapped[str] = mapped_column(String(200))
+    author: Mapped[str] = mapped_column(String(120))
+    status: Mapped[str] = mapped_column(String(40), default="want")  # reading | finished | want
+    year: Mapped[str] = mapped_column(String(20), default="")
+    link: Mapped[str] = mapped_column(String(400), default="")     # buy/preview link
+    cover_url: Mapped[str] = mapped_column(String(400), default="")
+    note: Mapped[str] = mapped_column(Text, default="")
+    order: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+
+class GuestbookEntry(Base):
+    """Anonymous (or signed) note left by a visitor. No auth required to write,
+    but anything with a honeypot value gets dropped at the API. Admin can
+    delete entries; otherwise everything is visible."""
+    __tablename__ = "guestbook_entries"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(80), default="")    # optional; "anonymous" if empty
+    message: Mapped[str] = mapped_column(Text)                    # required
+    # Lightweight rate-limit fingerprint — we only store a hash of the IP so we
+    # can collapse rapid duplicate posts, never the raw IP itself.
+    ip_hash: Mapped[str] = mapped_column(String(64), default="")
+    hidden: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
 
 
 class PageView(Base):
