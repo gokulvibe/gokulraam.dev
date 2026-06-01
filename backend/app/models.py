@@ -390,6 +390,20 @@ class GuestbookEntry(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
 
 
+class LogbookEntry(Base):
+    """Short-form observation on /logbook. Admin writes, public reads.
+    Body is intentionally short (~500 chars) — TIL is the long-form form."""
+    __tablename__ = "logbook_entries"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    body: Mapped[str] = mapped_column(Text)
+    tag: Mapped[str] = mapped_column(String(40), default="", index=True)
+    hidden: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, index=True
+    )
+
+
 class PageView(Base):
     __tablename__ = "page_views"
 

@@ -148,7 +148,7 @@ const total = photos.length;
 
   .film-frame {
     flex: 0 0 auto;
-    height: clamp(360px, 64vh, 620px);
+    height: clamp(280px, 56vh, 620px);
     background: #0d0d11;
     border: 1px solid rgba(255, 255, 255, 0.06);
     position: relative;
@@ -274,14 +274,20 @@ const total = photos.length;
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    padding: 56px 80px;
+    padding: 56px 16px;
+  }
+  @media (min-width: 768px) {
+    :global(.lightbox) { padding: 56px 80px; }
   }
   :global(.lightbox.is-open) { display: flex; }
   :global(.lightbox img) {
-    max-width: 90vw;
-    max-height: 78vh;
+    max-width: 94vw;
+    max-height: 70vh;
     object-fit: contain;
     box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+  }
+  @media (min-width: 768px) {
+    :global(.lightbox img) { max-width: 90vw; max-height: 78vh; }
   }
   :global(.lightbox__cap) {
     margin-top: 22px;
@@ -315,8 +321,8 @@ const total = photos.length;
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 46px;
-    height: 46px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     background: rgba(255,255,255,0.06);
     border: 1px solid rgba(255,255,255,0.18);
@@ -326,10 +332,15 @@ const total = photos.length;
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 1;
   }
   :global(.lightbox__nav:hover) { background: rgba(255,255,255,0.12); }
-  :global(.lightbox__nav--prev) { left: 24px; }
-  :global(.lightbox__nav--next) { right: 24px; }
+  :global(.lightbox__nav--prev) { left: 8px; }
+  :global(.lightbox__nav--next) { right: 8px; }
+  @media (min-width: 768px) {
+    :global(.lightbox__nav--prev) { left: 24px; }
+    :global(.lightbox__nav--next) { right: 24px; }
+  }
 </style>
 
 <script is:inline>

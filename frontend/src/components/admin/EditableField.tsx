@@ -16,7 +16,7 @@
  *   - chips              — single-line input (comma-separated); renders as chip cloud
  */
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { patchEntity } from '@/lib/api';
 import { useIsAdmin } from './useIsAdmin';
 
@@ -46,7 +46,6 @@ export default function EditableField({
   adminOnly = false,
 }: Props) {
   const isAdmin = useIsAdmin();
-  if (adminOnly && isAdmin !== true) return null;
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(initial);
   const [draft, setDraft] = useState(initial);
@@ -68,10 +67,37 @@ export default function EditableField({
       setValue(next);
       setEditing(false);
       setStatus('');
+      // Sync peer EditableField instances bound to the same field (e.g.
+      // when the homepage card is expanded into a clone with its own
+      // hydrated React instance, the underlying original must learn the
+      // new value too so it doesn't show stale content when the clone
+      // collapses away).
+      window.dispatchEvent(
+        new CustomEvent('editable:saved', {
+          detail: { endpoint, field, value: next },
+        }),
+      );
     } catch {
       setStatus('save failed');
     }
   }
+
+  // Listen for sync events from peer instances.
+  useEffect(() => {
+    function onPeerSaved(e: Event) {
+      const d = (e as CustomEvent<{ endpoint: string; field: string; value: string }>).detail;
+      if (!d || d.endpoint !== endpoint || d.field !== field) return;
+      setValue(d.value);
+      setDraft(d.value);
+    }
+    window.addEventListener('editable:saved', onPeerSaved);
+    return () => window.removeEventListener('editable:saved', onPeerSaved);
+  }, [endpoint, field]);
+
+  // Admin-only fields render nothing for visitors. Placed AFTER all hooks
+  // so the hook call order is identical on every render — React enforces
+  // this and SSR throws "Invalid hook call" if hooks come after a return.
+  if (adminOnly && isAdmin !== true) return null;
 
   function cancel() {
     setDraft(value);
@@ -153,7 +179,11 @@ export default function EditableField({
       : '');
 
   return (
-    <span style={{ display: 'inline-block', width: '100%' }}>
+    <span
+      style={{ display: 'inline-block', width: '100%' }}
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
       {isMultiline ? (
         <textarea
           ref={inputRef as React.RefObject<HTMLTextAreaElement>}

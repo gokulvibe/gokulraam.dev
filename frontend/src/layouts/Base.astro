@@ -1,4 +1,31 @@
 ---
+// Silence the SSR "Invalid hook call" warnings from @astrojs/react's
+// component sniffer.
+//
+// @astrojs/react decides whether a given component is a React component by
+// invoking it as a plain function inside a `Tester`, then checking the return
+// for the react.element $$typeof symbol. Calling the component outside a real
+// render trips React's hook-call tracker → 3+ "Invalid hook call" lines per
+// page render. The actual rendering, which goes through proper renderToString
+// paths, works correctly — the warnings are noise.
+//
+// We filter only the noise (message + stack contains `Object.check`, the
+// renderer's check fn). Real hook-rule violations in app code still log.
+if (typeof (globalThis as any).__astroReactHookFilter === 'undefined') {
+  (globalThis as any).__astroReactHookFilter = true;
+  const stripIfSniffer = (orig: (...a: unknown[]) => void) =>
+    (...args: unknown[]) => {
+      const msg = String(args[0] ?? '');
+      if (msg.includes('Invalid hook call')) {
+        const stack = new Error().stack ?? '';
+        if (stack.includes('Object.check')) return;
+      }
+      orig(...args);
+    };
+  console.error = stripIfSniffer(console.error);
+  console.warn = stripIfSniffer(console.warn);
+}
+
 import '@/styles/globals.css';
 import AdminBar from '@/components/admin/AdminBar';
 import CmdK from '@/components/CmdK';
@@ -90,7 +117,42 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://gokulraa
           </a>
           <a href="/resume.pdf" class="text-ember hover:opacity-80 transition-opacity">cv ↗</a>
         </nav>
+
+        <!-- Mobile-only hamburger (hidden on md+ via the .mobile-menu-btn media query) -->
+        <button
+          type="button"
+          id="mobile-menu-btn"
+          class="mobile-menu-btn"
+          aria-label="Open menu"
+          aria-expanded="false"
+          aria-controls="mobile-menu"
+        >
+          <span aria-hidden></span>
+          <span aria-hidden></span>
+          <span aria-hidden></span>
+        </button>
       </header>
+
+      <!-- Mobile nav overlay -->
+      <div id="mobile-menu" class="mobile-menu" aria-hidden="true" role="dialog" aria-label="Site navigation">
+        <nav class="mobile-menu__nav">
+          <a href="/work" class="mobile-menu__link"><span class="mobile-menu__num">01</span> work</a>
+          <a href="/projects" class="mobile-menu__link"><span class="mobile-menu__num">02</span> projects</a>
+          <a href="/til" class="mobile-menu__link"><span class="mobile-menu__num">03</span> til</a>
+          <a href="/logbook" class="mobile-menu__link"><span class="mobile-menu__num">04</span> logbook</a>
+          <a href="/now" class="mobile-menu__link"><span class="mobile-menu__num">05</span> now</a>
+          <a href="/badminton" class="mobile-menu__link"><span class="mobile-menu__num">06</span> badminton</a>
+          <a href="/uses" class="mobile-menu__link"><span class="mobile-menu__num">07</span> uses</a>
+          <a href="/photos" class="mobile-menu__link"><span class="mobile-menu__num">08</span> photos</a>
+          <a href="/guestbook" class="mobile-menu__link mobile-menu__link--gold">
+            <span class="mobile-menu__num">09</span> <span class="text-gold">✎</span> guestbook
+          </a>
+          <a href="/resume.pdf" class="mobile-menu__link mobile-menu__link--ember">
+            <span class="mobile-menu__num">10</span> cv ↗
+          </a>
+        </nav>
+        <button type="button" class="mobile-menu__close" id="mobile-menu-close" aria-label="Close menu">close ×</button>
+      </div>
 
       <slot />
 
@@ -111,6 +173,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://gokulraa
               search
             </button>
             <a href="/til/rss.xml" class="hover:text-cream" title="Subscribe via RSS">rss</a>
+            <a href="/logbook" class="hover:text-cream" title="Short-form observations">logbook</a>
             <a href="/guestbook" class="hover:text-cream" title="Sign the guestbook">guestbook</a>
             <span class="hidden h-3 w-px bg-rule md:inline-block"></span>
             <a href="https://github.com/gokulvibe" class="hover:text-cream">github</a>
@@ -166,7 +229,167 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://gokulraa
     <!-- Easter eggs — shutter chord + 'knock' keyword. Renders nothing visible. -->
     <EasterEggs client:load />
 
+    <!-- Mobile menu open/close logic -->
+    <script is:inline>
+      (() => {
+        const btn = document.getElementById('mobile-menu-btn');
+        const menu = document.getElementById('mobile-menu');
+        const closeBtn = document.getElementById('mobile-menu-close');
+        if (!btn || !menu) return;
+
+        function open() {
+          menu.classList.add('is-open');
+          btn.classList.add('is-open');
+          btn.setAttribute('aria-expanded', 'true');
+          menu.setAttribute('aria-hidden', 'false');
+          document.body.style.overflow = 'hidden';
+        }
+        function close() {
+          menu.classList.remove('is-open');
+          btn.classList.remove('is-open');
+          btn.setAttribute('aria-expanded', 'false');
+          menu.setAttribute('aria-hidden', 'true');
+          document.body.style.overflow = '';
+        }
+        btn.addEventListener('click', () => {
+          menu.classList.contains('is-open') ? close() : open();
+        });
+        closeBtn?.addEventListener('click', close);
+        // Tapping a link closes the menu before navigation completes
+        menu.querySelectorAll('.mobile-menu__link').forEach((a) => {
+          a.addEventListener('click', close);
+        });
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && menu.classList.contains('is-open')) close();
+        });
+      })();
+    </script>
+
     <style is:global>
+      /* ─── Mobile nav ─────────────────────────────────────── */
+      .mobile-menu-btn {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 5px;
+        width: 36px;
+        height: 36px;
+        padding: 8px 6px;
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 2px;
+        cursor: pointer;
+        transition: border-color 0.2s, background 0.2s;
+      }
+      .mobile-menu-btn:hover {
+        border-color: rgba(213, 178, 117, 0.6);
+      }
+      /* Hide hamburger on tablet/desktop — the inline nav takes over. */
+      @media (min-width: 768px) {
+        .mobile-menu-btn { display: none; }
+      }
+      .mobile-menu-btn span {
+        display: block;
+        height: 1.5px;
+        background: #f5efe3;
+        transition: transform 0.25s ease, opacity 0.2s ease;
+      }
+      .mobile-menu-btn.is-open span:nth-child(1) {
+        transform: translateY(7px) rotate(45deg);
+      }
+      .mobile-menu-btn.is-open span:nth-child(2) {
+        opacity: 0;
+      }
+      .mobile-menu-btn.is-open span:nth-child(3) {
+        transform: translateY(-6px) rotate(-45deg);
+      }
+
+      .mobile-menu {
+        position: fixed;
+        inset: 0;
+        z-index: 150;
+        background: rgba(8, 8, 12, 0.98);
+        backdrop-filter: blur(8px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 32px;
+        padding: 32px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+      }
+      .mobile-menu.is-open {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .mobile-menu__nav {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        width: 100%;
+        max-width: 340px;
+      }
+      .mobile-menu__link {
+        display: flex;
+        align-items: baseline;
+        gap: 14px;
+        padding: 14px 16px;
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 16px;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        color: #f5efe3;
+        text-decoration: none;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 2px;
+        transition: border-color 0.18s, background 0.18s, transform 0.18s;
+      }
+      .mobile-menu__link:active {
+        transform: translateX(2px);
+        background: rgba(213, 178, 117, 0.08);
+        border-color: rgba(213, 178, 117, 0.4);
+      }
+      .mobile-menu__num {
+        font-size: 11px;
+        color: #d5b275;
+        opacity: 0.7;
+        width: 22px;
+      }
+      .mobile-menu__link--gold { border-color: rgba(213, 178, 117, 0.3); }
+      .mobile-menu__link--ember { color: #ea580c; }
+
+      .mobile-menu__close {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(245, 239, 227, 0.6);
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        padding: 10px 18px;
+        border-radius: 2px;
+        cursor: pointer;
+      }
+      .mobile-menu__close:hover { color: #f5efe3; }
+
+      /* Light theme overrides */
+      [data-theme='light'] .mobile-menu-btn { border-color: rgba(0,0,0,0.15); }
+      [data-theme='light'] .mobile-menu-btn span { background: #1c1a14; }
+      [data-theme='light'] .mobile-menu {
+        background: rgba(252, 248, 240, 0.98);
+      }
+      [data-theme='light'] .mobile-menu__link {
+        color: #1c1a14;
+        border-color: rgba(0, 0, 0, 0.1);
+      }
+      [data-theme='light'] .mobile-menu__close {
+        color: rgba(28, 26, 20, 0.6);
+        border-color: rgba(0, 0, 0, 0.1);
+      }
+
       /* Easter-egg toast (bottom-right corner, gold left rule) */
       .egg-toast {
         position: fixed;
@@ -390,12 +613,20 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://gokulraa
           setTimeout(done, 800); // safety net
         }
 
-        // Click delegation
+        // Click delegation. We want clicking *background* of a card to
+        // expand it, but clicking on interactive content inside should
+        // do its own thing (navigate / edit / submit) without expanding.
+        // The inline-edit selectors are the important addition — without
+        // them, clicking "save"/"cancel"/etc. expanded the card instead
+        // of running the React handler.
         document.addEventListener('click', (e) => {
           const card = e.target.closest('[data-expandable]:not(.card-clone)');
           if (card) {
-            // Don't expand if clicking a real link/button inside the card
-            const inner = e.target.closest('a, button');
+            const inner = e.target.closest(
+              'a, button, input, textarea, select, [contenteditable="true"], ' +
+              '.editable, .editable--admin, .editable__pencil, .editable-input, ' +
+              '.editable-row, .tt-editor, .ProseMirror, .post-actions'
+            );
             if (inner && !inner.classList.contains('card-close')) return;
             e.preventDefault();
             expand(card);

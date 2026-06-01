@@ -19,6 +19,7 @@ from app.models import (
     BadmintonPlayer,
     BadmintonTournament,
     Book,
+    LogbookEntry,
     MuseumExhibit,
     NowItem,
     Photo,
@@ -600,6 +601,34 @@ def seed_books() -> int:
             ))
         db.commit()
         return len(_BOOK_DEFAULTS)
+
+
+# ─── Logbook seed (short-form observations) ──────────────────
+
+_LOGBOOK_DEFAULTS: list[tuple[str, str, int]] = [
+    # (body, tag, hours_ago)
+    ("First entry of the logbook. TIL was getting lonely.", "noted", 1),
+    ("Watched Lakshya pull a backhand cross-court drop on match point. The kind of shot I'm two years away from.", "watching", 18),
+    ("Found out about Postgres generated columns. How did I never use these?", "win", 44),
+    ("Pre-coffee. Already wishing I had two.", "thought", 72),
+]
+
+
+def seed_logbook() -> int:
+    """Seed only when the table is empty."""
+    from datetime import timedelta
+    with SessionLocal() as db:
+        if db.scalar(select(LogbookEntry.id).limit(1)) is not None:
+            return 0
+        now = datetime.now(tz=timezone.utc)
+        for body, tag, hours_ago in _LOGBOOK_DEFAULTS:
+            db.add(LogbookEntry(
+                body=body,
+                tag=tag,
+                created_at=now - timedelta(hours=hours_ago),
+            ))
+        db.commit()
+        return len(_LOGBOOK_DEFAULTS)
 
 
 def seed_museum() -> int:

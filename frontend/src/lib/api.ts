@@ -168,6 +168,31 @@ export const guestbook = {
     request<void>(`/api/guestbook/${id}`, { method: 'DELETE' }),
 };
 
+// ─── Logbook ──────────────────────────────────────────────────
+
+export interface LogbookEntry {
+  id: number;
+  body: string;
+  tag: string;
+  created_at: string;
+}
+
+export const logbook = {
+  list: () => request<LogbookEntry[]>('/api/logbook'),
+  create: (body: { body: string; tag: string }) =>
+    request<LogbookEntry>('/api/logbook', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  update: (id: number, patch: Partial<Pick<LogbookEntry, 'body' | 'tag'>>) =>
+    request<LogbookEntry>(`/api/logbook/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+  remove: (id: number) =>
+    request<void>(`/api/logbook/${id}`, { method: 'DELETE' }),
+};
+
 // ─── TIL ───────────────────────────────────────────────────────
 
 export const til = {

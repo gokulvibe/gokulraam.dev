@@ -1324,6 +1324,51 @@ body { padding-bottom: 4rem; }
   padding: 3rem 2.5rem 2.5rem;
 }
 .card-clone.is-open .game-card__hint { display: none; }
+
+/* ─── Expanded-card clones are view-only ─────────────────────────
+   ExpandableCard's expander does `cloneNode(true)` on the source card.
+   The clone's astro-islands re-hydrate as fresh React instances — they
+   show edit affordances and accept clicks, but their saves can't reach
+   the original element, and even mid-edit state desyncs visibly. Per
+   the design fix: disable editing in the clone entirely and direct
+   admins to the dedicated section page (/work, /now, /uses, etc).
+   View pages render the same EditableField components without the
+   cloning indirection, so editing works there. */
+.card-clone .editable,
+.card-clone .editable--admin {
+  pointer-events: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  cursor: default !important;
+}
+.card-clone .editable:hover,
+.card-clone .editable--admin:hover {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.card-clone .editable__pencil { display: none !important; }
+.card-clone .editable-input,
+.card-clone .editable-row { display: none !important; }
+
+/* Small ribbon at the top of the expanded clone so admin users know to
+   edit elsewhere. Only shows when the clone contains an admin editable. */
+.card-clone.is-open:has(.editable--admin)::before {
+  content: "👁  view only · edit from the section page";
+  position: sticky;
+  top: 0;
+  display: block;
+  text-align: center;
+  font-family: theme('fontFamily.mono');
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: rgba(245, 239, 227, 0.55);
+  padding: 8px 16px;
+  background: rgba(213, 178, 117, 0.08);
+  border-bottom: 1px solid rgba(213, 178, 117, 0.22);
+  margin: -3rem -2.5rem 1.5rem;
+  z-index: 5;
+}
 .card-clone.is-open .game-card__numeral { top: 1.4rem; left: 1.8rem; }
 .card-clone.is-open .game-card__glyph   { top: 1.4rem; right: 1.8rem; }
 .card-clone.is-open .game-card__watermark { opacity: 0.025; }
@@ -2526,6 +2571,99 @@ body { padding-bottom: 4rem; }
   border-color: var(--m-text);
 }
 [data-museum] .editable-row button.cancel { color: var(--m-mist); }
+
+/* ─── TIL share panel ─────────────────────────────────────── */
+
+.til-share {
+  margin-top: 3rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid theme('colors.rule');
+  border-left: 2px solid theme('colors.gold');
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.015);
+}
+.til-share__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.til-share__label {
+  font-family: theme('fontFamily.mono');
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: theme('colors.gold');
+}
+.til-share__hint {
+  font-family: theme('fontFamily.mono');
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: theme('colors.ghost');
+}
+.til-share__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.til-share__btn {
+  background: transparent;
+  border: 1px solid theme('colors.rule');
+  color: theme('colors.cream');
+  font-family: theme('fontFamily.mono');
+  font-size: 11px;
+  padding: 8px 14px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  cursor: pointer;
+  transition: border-color 0.16s, color 0.16s, background 0.16s;
+}
+.til-share__btn:hover {
+  border-color: rgba(213, 178, 117, 0.6);
+  color: theme('colors.gold');
+}
+.til-share__btn.is-active {
+  border-color: theme('colors.gold');
+  color: theme('colors.gold');
+}
+.til-share__btn--primary {
+  background: rgba(213, 178, 117, 0.08);
+  border-color: rgba(213, 178, 117, 0.45);
+  color: theme('colors.gold');
+}
+.til-share__btn--primary:hover {
+  background: rgba(213, 178, 117, 0.16);
+  color: #fff;
+}
+.til-share__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.til-share__preview {
+  margin-top: 16px;
+  border: 1px solid theme('colors.rule');
+  background: #050507;
+  padding: 8px;
+  border-radius: 2px;
+}
+.til-share__preview img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.til-share__caption {
+  margin-top: 8px;
+  font-family: theme('fontFamily.mono');
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: theme('colors.ghost');
+  text-align: center;
+}
+
+[data-theme='light'] .til-share { background: rgba(0, 0, 0, 0.015); }
+[data-theme='light'] .til-share__btn { color: #1c1a14; }
+[data-theme='light'] .til-share__preview { background: #f0eadb; }
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {

@@ -1,0 +1,319 @@
+---
+export const prerender = false;
+
+import Base from '@/layouts/Base.astro';
+import EditableField from '@/components/admin/EditableField';
+import LogbookCompose from '@/components/admin/LogbookCompose';
+import LogbookDelete from '@/components/admin/LogbookDelete';
+
+const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8000';
+
+interface LogbookRow {
+  id: number;
+  body: string;
+  tag: string;
+  created_at: string;
+}
+
+let entries: LogbookRow[] = [];
+let backendOk = true;
+try {
+  const res = await fetch(`${API_BASE}/api/logbook`);
+  if (res.ok) entries = await res.json();
+  else backendOk = false;
+} catch {
+  backendOk = false;
+}
+
+// Group by absolute day (YYYY-MM-DD). Within each day, entries already
+// come pre-sorted newest first from the API.
+type Group = { key: string; label: string; entries: LogbookRow[] };
+const groups: Group[] = [];
+const seen = new Map<string, Group>();
+for (const e of entries) {
+  const d = new Date(e.created_at);
+  const key =
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  let g = seen.get(key);
+  if (!g) {
+    const label = d.toLocaleDateString('en-US', {
+      weekday: 'long',
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    });
+    g = { key, label, entries: [] };
+    seen.set(key, g);
+    groups.push(g);
+  }
+  g.entries.push(e);
+}
+
+function timeOf(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+---
+
+<Base title="Logbook — Gokul Raam" description="Short-form observations. Daily, when something's worth writing down.">
+  <header class="mb-10">
+    <div class="label mb-4">// logbook</div>
+    <h1 class="display text-5xl md:text-6xl">
+      A short<br /><span class="italic text-ember">field journal.</span>
+    </h1>
+    <p class="mt-6 max-w-xl text-mist">
+      Brief notes — observations, small wins, things I noticed today.
+      Lower bar than TIL; higher than a tweet. Newest at top.
+    </p>
+  </header>
+
+  {!backendOk && (
+    <div class="card border-rose/30 bg-rose/5 text-cream mb-8">
+      <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-rose mb-2">// backend offline</p>
+      <p class="text-sm text-parchment">
+        The API at <code class="font-mono">{API_BASE}</code> is unreachable.
+      </p>
+    </div>
+  )}
+
+  <LogbookCompose client:load />
+
+  <section class="logbook-feed mt-10">
+    {groups.length === 0 && backendOk && (
+      <p class="text-mist italic">Nothing yet — be the first to write something here.</p>
+    )}
+
+    {groups.map((g) => (
+      <div class="logbook-day">
+        <h2 class="logbook-day__head">
+          <span class="text-gold">◆</span>
+          <span>{g.label}</span>
+        </h2>
+        <ol class="logbook-day__entries">
+          {g.entries.map((e) => (
+            <li class="logbook-entry">
+              <div class="logbook-entry__time">{timeOf(e.created_at)}</div>
+              <div class="logbook-entry__main">
+                <p class="logbook-entry__body">
+                  <EditableField
+                    client:load
+                    endpoint={`/api/logbook/${e.id}`}
+                    field="body"
+                    initial={e.body}
+                    placeholder="entry body"
+                    format="longtext"
+                  />
+                </p>
+                <div class="logbook-entry__meta">
+                  <span class="logbook-entry__tag" data-empty={!e.tag}>
+                    <EditableField
+                      client:load
+                      endpoint={`/api/logbook/${e.id}`}
+                      field="tag"
+                      initial={e.tag}
+                      placeholder="tag"
+                    />
+                  </span>
+                  <LogbookDelete client:load entryId={e.id} />
+                </div>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    ))}
+  </section>
+</Base>
+
+<style>
+  /* Compose form */
+  :global(.logbook-compose) {
+    border: 1px solid var(--rule, rgba(255,255,255,0.12));
+    background: rgba(255, 255, 255, 0.02);
+    padding: 16px 18px;
+    border-left: 2px solid #d5b275;
+    border-radius: 2px;
+  }
+  :global(.logbook-compose__head) {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+  }
+  :global(.logbook-compose__body) {
+    width: 100%;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--cream, #f5efe3);
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 18px;
+    line-height: 1.5;
+    padding: 10px 12px;
+    border-radius: 2px;
+    resize: vertical;
+    min-height: 56px;
+  }
+  :global(.logbook-compose__body:focus) {
+    outline: none;
+    border-color: rgba(213, 178, 117, 0.5);
+  }
+  :global(.logbook-compose__row) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-top: 10px;
+  }
+  :global(.logbook-compose__tag) {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--cream, #f5efe3);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    padding: 6px 10px;
+    border-radius: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    width: 140px;
+  }
+  :global(.logbook-compose__quick) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex: 1;
+  }
+  :global(.logbook-quick-tag) {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.08);
+    color: rgba(245,239,227,0.55);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 10px;
+    padding: 4px 8px;
+    border-radius: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  :global(.logbook-quick-tag:hover) {
+    color: var(--cream, #f5efe3);
+    border-color: rgba(213,178,117,0.4);
+  }
+  :global(.logbook-quick-tag.is-active) {
+    color: #d5b275;
+    border-color: #d5b275;
+  }
+  :global(.logbook-compose__post) {
+    background: #d5b275;
+    color: #0b0b0f;
+    border: none;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    padding: 8px 18px;
+    border-radius: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  :global(.logbook-compose__post:hover:not(:disabled)) { background: #e0c188; }
+  :global(.logbook-compose__post:disabled) { opacity: 0.4; cursor: not-allowed; }
+  :global(.logbook-compose__status) {
+    margin-top: 8px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 10.5px;
+    color: rgba(245,239,227,0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+  }
+
+  /* Feed */
+  .logbook-day { margin-bottom: 36px; }
+  .logbook-day__head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    color: var(--cream, #f5efe3);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule, rgba(255,255,255,0.1));
+  }
+  .logbook-day__entries {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .logbook-entry {
+    display: grid;
+    grid-template-columns: 70px 1fr;
+    gap: 18px;
+    padding: 14px 0;
+    border-bottom: 1px dashed rgba(255,255,255,0.06);
+  }
+  .logbook-entry:last-child { border-bottom: none; }
+  .logbook-entry__time {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    color: rgba(245,239,227,0.45);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    padding-top: 4px;
+  }
+  .logbook-entry__main { display: flex; flex-direction: column; gap: 6px; }
+  .logbook-entry__body {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 18px;
+    line-height: 1.5;
+    color: var(--cream, #f5efe3);
+    margin: 0;
+  }
+  .logbook-entry__meta {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  :global(.logbook-entry__tag) {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 10px;
+    color: #d5b275;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    border: 1px solid rgba(213,178,117,0.3);
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+  :global(.logbook-entry__tag[data-empty="true"]) {
+    border-color: transparent;
+    color: rgba(245,239,227,0.3);
+  }
+  :global(.logbook-delete) {
+    background: transparent;
+    border: none;
+    color: rgba(245,239,227,0.35);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 6px;
+  }
+  :global(.logbook-delete:hover) { color: #e57373; }
+
+  /* Light theme tweaks */
+  :global([data-theme='light']) .logbook-compose { background: rgba(0,0,0,0.02); }
+  :global([data-theme='light']) .logbook-compose__body { color: #1c1a14; border-color: rgba(0,0,0,0.1); }
+  :global([data-theme='light']) .logbook-compose__tag { color: #1c1a14; border-color: rgba(0,0,0,0.1); }
+  :global([data-theme='light']) .logbook-quick-tag { color: rgba(28,26,20,0.55); border-color: rgba(0,0,0,0.08); }
+  :global([data-theme='light']) .logbook-compose__post { background: #b89455; color: #fff; }
+  :global([data-theme='light']) .logbook-entry__body { color: #1c1a14; }
+  :global([data-theme='light']) .logbook-entry__time { color: rgba(28,26,20,0.55); }
+
+  /* Mobile */
+  @media (max-width: 640px) {
+    .logbook-entry { grid-template-columns: 56px 1fr; gap: 12px; }
+    .logbook-entry__body { font-size: 16px; }
+  }
+</style>

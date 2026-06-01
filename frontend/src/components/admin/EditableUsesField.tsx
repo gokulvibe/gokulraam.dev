@@ -80,7 +80,11 @@ export default function EditableUsesField({
   }
 
   return (
-    <span style={{ display: 'inline-block', width: '100%' }}>
+    <span
+      style={{ display: 'inline-block', width: '100%' }}
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
       <input
         ref={inputRef}
         className={`editable-input ${className}`}

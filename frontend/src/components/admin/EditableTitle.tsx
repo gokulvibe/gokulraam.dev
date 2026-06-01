@@ -75,7 +75,10 @@ export default function EditableTitle({ postId, initial }: Props) {
   }
 
   return (
-    <div>
+    <div
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
       <input
         ref={inputRef}
         className="editable-input font-display text-4xl leading-tight md:text-5xl"
