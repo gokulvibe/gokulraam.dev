@@ -31,6 +31,8 @@ interface Props {
   format?: Format;
   /** For chips: extra className applied to each chip. */
   chipClass?: string;
+  /** If true, render nothing for non-admins (hides raw values like image URLs). */
+  adminOnly?: boolean;
 }
 
 export default function EditableField({
@@ -41,8 +43,10 @@ export default function EditableField({
   placeholder = '',
   format = 'text',
   chipClass = 'chip',
+  adminOnly = false,
 }: Props) {
   const isAdmin = useIsAdmin();
+  if (adminOnly && isAdmin !== true) return null;
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(initial);
   const [draft, setDraft] = useState(initial);

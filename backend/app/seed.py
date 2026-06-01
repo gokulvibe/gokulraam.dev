@@ -544,21 +544,40 @@ _BOOK_DEFAULTS: list[tuple[str, str, str, str, str, str]] = [
 ]
 
 
+# Sample photos sourced from picsum.photos (stable, license-free). Replace
+# with real photos by admin-editing the url field on each card. Mix of
+# landscape + portrait aspect ratios so the camera-roll layout reads as
+# real photography, not a uniform grid.
 _PHOTO_DEFAULTS: list[tuple[str, str, str, str]] = [
     # (slug, url, caption, taken_at)
-    # All empty by default — admin fills them in. Drop public image URLs
-    # (Imgur direct links, GitHub user-content, any CDN) into the url field.
-    ("photo-1", "", "first photo · paste any image url",  ""),
-    ("photo-2", "", "second photo",                       ""),
-    ("photo-3", "", "third photo",                        ""),
-    ("photo-4", "", "fourth photo",                       ""),
+    ("yelagiri-dawn",    "https://picsum.photos/id/1018/1600/1000",
+     "Yelagiri at dawn",              "Mar 2026"),
+    ("cauvery-evening",  "https://picsum.photos/id/1015/900/1200",
+     "Cauvery, late afternoon",       "Jan 2026"),
+    ("western-ghats",    "https://picsum.photos/id/1019/1400/900",
+     "Western Ghats green",           "Feb 2026"),
+    ("first-coffee",     "https://picsum.photos/id/431/900/1200",
+     "First coffee · before the court", "Apr 2026"),
+    ("last-game",        "https://picsum.photos/id/1062/1600/1000",
+     "Last game of the night",        "May 2026"),
+    ("apartment-walk",   "https://picsum.photos/id/180/1200/800",
+     "Walk around the apartment",     "May 2026"),
+    ("ooty-monsoon",     "https://picsum.photos/id/164/1400/900",
+     "Ooty · monsoon",                "Aug 2025"),
+    ("desk-1am",         "https://picsum.photos/id/119/1200/800",
+     "Desk · 1am, almost shipped it", "Apr 2026"),
 ]
 
 
 def seed_photos() -> int:
+    """Seed sample photos. Reseeds if the only rows present are empty
+    placeholders (so old empty rows are replaced once)."""
     with SessionLocal() as db:
-        if db.scalar(select(Photo.id).limit(1)) is not None:
-            return 0
+        rows = list(db.scalars(select(Photo)).all())
+        if rows and any((r.url or "").strip() for r in rows):
+            return 0  # admin has real content — leave it alone
+        for r in rows:
+            db.delete(r)  # wipe empty placeholders
         for order, (slug, url, caption, taken_at) in enumerate(_PHOTO_DEFAULTS):
             db.add(Photo(slug=slug, url=url, caption=caption, taken_at=taken_at, order=order))
         db.commit()
