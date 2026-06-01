@@ -93,9 +93,14 @@ function cameraFlash() {
 
 /**
  * Door-knock effect. Three quick low-frequency thumps via WebAudio
- * (no asset file needed) + a tiny page shake synced to each thump.
+ * (no asset file needed) + a tiny page shake synced to each thump +
+ * haptic feedback on devices that support `navigator.vibrate`.
  * Skips the audio if AudioContext is blocked or unavailable; the
  * visual still fires.
+ *
+ * Haptic support: Android Chrome/Firefox/Edge — yes. iOS Safari —
+ * no (Apple disabled the Vibration API). On unsupported devices
+ * the call is a no-op; audio + shake still play.
  */
 function doorKnock() {
   // Visual: small page rumble. Class is removed after the animation
@@ -105,6 +110,17 @@ function doorKnock() {
   void document.body.offsetWidth;
   document.body.classList.add('egg-knock-shake');
   setTimeout(() => document.body.classList.remove('egg-knock-shake'), 700);
+
+  // Haptic: three short buzzes spaced to match the audio thumps
+  // (knocks at 0ms, 160ms, 320ms). Pattern alternates vibrate/pause
+  // in ms — 50ms buzz, 110ms gap, repeat.
+  try {
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      navigator.vibrate([50, 110, 50, 110, 50]);
+    }
+  } catch {
+    /* permissions error or quota — silently skip */
+  }
 
   // Audio: three thumps. Each is a sub-100Hz sine with an envelope
   // that decays in ~120ms — sounds like a closed-fist door knock.
