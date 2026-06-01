@@ -44,6 +44,7 @@ const TRIGGERS: Trigger[] = [
   {
     word: 'knock',
     ledgerKey: 'museum',
+    effect: doorKnock,
     toast: {
       glyph: '🚪',
       title: "knock knock — who's there?",
@@ -88,6 +89,53 @@ function cameraFlash() {
   document.body.appendChild(flash);
   requestAnimationFrame(() => flash.classList.add('is-on'));
   setTimeout(() => flash.remove(), 700);
+}
+
+/**
+ * Door-knock effect. Three quick low-frequency thumps via WebAudio
+ * (no asset file needed) + a tiny page shake synced to each thump.
+ * Skips the audio if AudioContext is blocked or unavailable; the
+ * visual still fires.
+ */
+function doorKnock() {
+  // Visual: small page rumble. Class is removed after the animation
+  // completes; CSS @keyframes drives the three knocks.
+  document.body.classList.remove('egg-knock-shake');  // reset if mid-anim
+  // Force reflow so re-adding the class restarts the animation
+  void document.body.offsetWidth;
+  document.body.classList.add('egg-knock-shake');
+  setTimeout(() => document.body.classList.remove('egg-knock-shake'), 700);
+
+  // Audio: three thumps. Each is a sub-100Hz sine with an envelope
+  // that decays in ~120ms — sounds like a closed-fist door knock.
+  try {
+    const Ctx = (window.AudioContext ||
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext) as
+      | typeof AudioContext
+      | undefined;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const SPACING = 0.16;
+    for (let i = 0; i < 3; i++) {
+      const t = ctx.currentTime + i * SPACING;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(110, t);
+      osc.frequency.exponentialRampToValueAtTime(45, t + 0.09);
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.32, t + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.15);
+    }
+    // Release the context after the sounds finish.
+    setTimeout(() => ctx.close().catch(() => undefined), 800);
+  } catch {
+    /* AudioContext unavailable / blocked — visual still played */
+  }
 }
 
 function rememberDiscovery(key: string) {
