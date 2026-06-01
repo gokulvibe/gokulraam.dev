@@ -1534,6 +1534,181 @@ body { padding-bottom: 4rem; }
 }
 [data-theme='light'] .editable__pencil { color: var(--c-accent); }
 
+/* ─── TIL prose (rendered post body) in light mode ──────────── */
+
+[data-theme='light'] .prose {
+  color: var(--c-text-2);
+}
+[data-theme='light'] .prose h2,
+[data-theme='light'] .prose h3 {
+  color: var(--c-text);
+}
+[data-theme='light'] .prose strong {
+  color: var(--c-text);
+}
+[data-theme='light'] .prose em {
+  color: var(--c-text-2);
+}
+[data-theme='light'] .prose a {
+  color: var(--c-accent);
+}
+[data-theme='light'] .prose code:not(pre code) {
+  background: rgba(200, 150, 101, 0.12);
+  color: #8a5c33;
+  border: 1px solid rgba(200, 150, 101, 0.30);
+}
+[data-theme='light'] .prose pre {
+  background: #efe7d4;
+  border: 1px solid var(--c-rule);
+  color: var(--c-text);
+}
+[data-theme='light'] .prose pre code {
+  color: inherit;
+}
+[data-theme='light'] .prose blockquote {
+  border-left-color: var(--c-accent);
+  color: var(--c-text-muted);
+}
+[data-theme='light'] .prose ul,
+[data-theme='light'] .prose ol {
+  color: var(--c-text-2);
+}
+
+/* ─── TipTap editor (admin edit mode) in light mode ─────────── */
+
+[data-theme='light'] .tt-toolbar {
+  background: var(--c-bg-2);
+  border-color: var(--c-rule);
+}
+[data-theme='light'] .tt-tool {
+  color: var(--c-text-muted);
+}
+[data-theme='light'] .tt-tool:hover {
+  color: var(--c-text);
+  background: rgba(74, 67, 56, 0.06);
+}
+[data-theme='light'] .tt-tool.is-active {
+  color: var(--c-accent);
+  background: rgba(122, 140, 92, 0.15);
+  border-color: rgba(122, 140, 92, 0.40);
+}
+[data-theme='light'] .tt-divider {
+  background: var(--c-rule);
+}
+[data-theme='light'] .tt-editor {
+  background: var(--c-surface);
+  border-color: var(--c-rule);
+}
+[data-theme='light'] .tt-editor .ProseMirror {
+  color: var(--c-text-2);
+}
+[data-theme='light'] .tt-editor .ProseMirror h1,
+[data-theme='light'] .tt-editor .ProseMirror h2,
+[data-theme='light'] .tt-editor .ProseMirror h3 {
+  color: var(--c-text);
+}
+[data-theme='light'] .tt-editor .ProseMirror strong {
+  color: var(--c-text);
+}
+[data-theme='light'] .tt-editor .ProseMirror em {
+  color: var(--c-text-2);
+}
+[data-theme='light'] .tt-editor .ProseMirror a {
+  color: var(--c-accent);
+}
+[data-theme='light'] .tt-editor .ProseMirror code {
+  background: rgba(200, 150, 101, 0.12);
+  color: #8a5c33;
+  border: 1px solid rgba(200, 150, 101, 0.30);
+}
+[data-theme='light'] .tt-editor .ProseMirror pre {
+  background: #efe7d4;
+  border: 1px solid var(--c-rule);
+  color: var(--c-text);
+}
+[data-theme='light'] .tt-editor .ProseMirror blockquote {
+  border-left-color: var(--c-accent);
+  color: var(--c-text-muted);
+}
+[data-theme='light'] .tt-editor .ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--c-text-soft);
+}
+
+/* ─── Inline-edit input fields in light mode ─────────────────── */
+
+[data-theme='light'] .editable-input {
+  background: var(--c-surface);
+  border-color: rgba(122, 140, 92, 0.40);
+  color: var(--c-text);
+}
+[data-theme='light'] .editable-input:focus {
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 3px rgba(122, 140, 92, 0.14);
+}
+[data-theme='light'] .editable-row button.save {
+  color: var(--c-accent);
+  background: rgba(122, 140, 92, 0.10);
+  border-color: rgba(122, 140, 92, 0.40);
+}
+[data-theme='light'] .editable-row button.save:hover {
+  background: rgba(122, 140, 92, 0.20);
+}
+[data-theme='light'] .editable-row button.cancel {
+  color: var(--c-text-muted);
+}
+[data-theme='light'] .editable-row button.cancel:hover {
+  color: var(--c-text);
+  background: rgba(74, 67, 56, 0.06);
+}
+
+/* ─── Post status actions (publish / delete on TIL) in light ── */
+
+[data-theme='light'] .post-actions {
+  background: rgba(255, 255, 255, 0.5);
+  border-color: rgba(122, 140, 92, 0.30);
+}
+[data-theme='light'] .post-actions__hint { color: var(--c-accent); }
+[data-theme='light'] .post-actions__state { color: var(--c-text-muted); }
+[data-theme='light'] .post-actions__chip--draft {
+  color: #8a5c33;
+  background: rgba(200, 150, 101, 0.15);
+  border: 1px solid rgba(200, 150, 101, 0.40);
+}
+[data-theme='light'] .post-actions__chip--published {
+  color: var(--c-accent);
+  background: rgba(122, 140, 92, 0.15);
+  border: 1px solid rgba(122, 140, 92, 0.40);
+}
+[data-theme='light'] .post-actions__btn { color: var(--c-text); }
+[data-theme='light'] .post-actions__btn:hover { background: rgba(74, 67, 56, 0.06); }
+[data-theme='light'] .post-actions__btn--primary {
+  color: var(--c-accent);
+  border-color: rgba(122, 140, 92, 0.40);
+}
+[data-theme='light'] .post-actions__btn--primary:hover {
+  background: rgba(122, 140, 92, 0.12);
+}
+
+/* ─── /admin/login screen in light mode ──────────────────────── */
+
+[data-theme='light'] .admin-input {
+  background: var(--c-surface);
+  border-color: var(--c-rule);
+  color: var(--c-text);
+}
+[data-theme='light'] .admin-input:focus {
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 3px rgba(122, 140, 92, 0.14);
+}
+[data-theme='light'] .admin-btn-primary {
+  color: var(--c-accent);
+  background: rgba(122, 140, 92, 0.10);
+  border-color: rgba(122, 140, 92, 0.45);
+}
+[data-theme='light'] .admin-btn-primary:hover {
+  background: rgba(122, 140, 92, 0.20);
+}
+
 /* ─── Casual home — only visible in light mode ─────────────── */
 
 .casual-home {
