@@ -2,6 +2,7 @@
 import '@/styles/globals.css';
 import AdminBar from '@/components/admin/AdminBar';
 import CmdK from '@/components/CmdK';
+import EasterEggs from '@/components/EasterEggs';
 import ThemeToggle from '@/components/ThemeToggle';
 interface Props {
   title?: string;
@@ -67,7 +68,12 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://gokulraa
 
     <div class="mx-auto max-w-6xl px-6 py-7 md:px-10 md:py-10">
       <header class="mb-14 flex items-center justify-between">
-        <a href="/" class="group flex items-baseline gap-2 font-mono text-[12.5px] tracking-[0.18em] uppercase">
+        <a
+          href="/"
+          class="group flex items-baseline gap-2 font-mono text-[12.5px] tracking-[0.18em] uppercase"
+          data-egg-shutter
+          title="◆ home — try shift-clicking sometime"
+        >
           <span class="text-gold">◆</span>
           <span class="text-cream">gokul</span>
           <span class="text-mist">/</span>
@@ -161,6 +167,108 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://gokulraa
 
     <!-- Floating admin bar — renders only when authenticated -->
     <AdminBar client:load />
+
+    <!-- Easter eggs — shutter chord + 'knock' keyword. Renders nothing visible. -->
+    <EasterEggs client:load />
+
+    <style is:global>
+      /* Easter-egg toast (bottom-right corner, gold left rule) */
+      .egg-toast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 999;
+        background: rgba(8, 8, 12, 0.96);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-left: 2px solid #d5b275;
+        color: #f5efe3;
+        padding: 14px 18px;
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 12px;
+        max-width: 320px;
+        border-radius: 2px;
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        transform: translateY(12px);
+        transition: opacity 0.32s ease, transform 0.32s ease;
+      }
+      .egg-toast.is-open {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .egg-toast__glyph {
+        font-size: 22px;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+      .egg-toast__body {
+        flex: 1;
+      }
+      .egg-toast__title {
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        font-size: 10.5px;
+        color: rgba(245, 239, 227, 0.78);
+        margin-bottom: 6px;
+      }
+      .egg-toast__link {
+        color: #d5b275;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        font-size: 11px;
+        text-decoration: none;
+        font-weight: 500;
+      }
+      .egg-toast__link:hover { color: #fff; }
+      .egg-toast__x {
+        position: absolute;
+        top: 4px;
+        right: 6px;
+        background: transparent;
+        border: none;
+        color: rgba(245, 239, 227, 0.4);
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+        padding: 4px 6px;
+      }
+      .egg-toast__x:hover { color: #fff; }
+
+      [data-theme='light'] .egg-toast {
+        background: rgba(252, 248, 240, 0.98);
+        border-color: rgba(0, 0, 0, 0.16);
+        color: #1c1a14;
+      }
+      [data-theme='light'] .egg-toast__title { color: rgba(28, 26, 20, 0.65); }
+      [data-theme='light'] .egg-toast__x { color: rgba(28, 26, 20, 0.4); }
+      [data-theme='light'] .egg-toast__x:hover { color: #1c1a14; }
+
+      /* Camera flash overlay */
+      .egg-flash {
+        position: fixed;
+        inset: 0;
+        background: #fff;
+        opacity: 0;
+        pointer-events: none;
+        z-index: 998;
+      }
+      .egg-flash.is-on {
+        animation: egg-flash-anim 0.55s ease-out forwards;
+      }
+      @keyframes egg-flash-anim {
+        0%   { opacity: 0;    }
+        18%  { opacity: 0.85; }
+        100% { opacity: 0;    }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .egg-flash.is-on { animation-duration: 0.2s; }
+        .egg-toast { transition: none; }
+      }
+    </style>
 
     <!-- Card expander: vanilla, no framework, ~80 lines -->
     <script is:inline>
