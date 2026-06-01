@@ -10,6 +10,7 @@ import EditableTags from '@/components/admin/EditableTags';
 import EditableBody from '@/components/admin/EditableBody';
 import EditableAttachments from '@/components/admin/EditableAttachments';
 import PostStatusActions from '@/components/admin/PostStatusActions';
+import TilDraftLoader from '@/components/admin/TilDraftLoader';
 
 const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8000';
 
@@ -44,6 +45,12 @@ if (slug) {
     // Forward the visitor's cookie so the backend can distinguish admin vs guest.
     // - Guest: drafts return 404 (kept private)
     // - Admin: drafts return the post (so the edit/preview flow works)
+    //
+    // Caveat: when frontend + backend are on different origins (Pages →
+    // Render), the browser doesn't send the backend's auth cookie to the
+    // Pages domain. SSR can't read drafts in that case — we fall back to
+    // a client-side loader (TilDraftLoader) which fetches with
+    // credentials:'include' directly against the backend domain.
     const res = await fetch(`${API_BASE}/api/til/${slug}`, {
       headers: cookie ? { cookie } : {},
     });
@@ -54,10 +61,8 @@ if (slug) {
     backendOk = false;
   }
 }
-
-if (!post && backendOk) {
-  return Astro.redirect('/til');
-}
+// Note: deliberately not redirecting when post is missing. Could be a draft
+// that SSR can't see cross-origin — let the client retry with credentials.
 
 const fmt = (s: string) =>
   new Date(s).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
@@ -116,4 +121,11 @@ const fmt = (s: string) =>
       </article>
     )
   }
+
+  {/* SSR couldn't load the post — try client-side with credentials.
+      Handles the cross-origin draft case (Pages → Render) plus straightforward
+      "post deleted" / "wrong URL" gracefully. */}
+  {!post && backendOk && slug && (
+    <TilDraftLoader client:only="react" slug={slug} />
+  )}
 </Base>
