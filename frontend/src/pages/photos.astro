@@ -28,6 +28,12 @@ try {
 }
 
 const total = photos.length;
+
+// Locally-stored uploads have a `/uploads/...` relative path that needs
+// the backend origin prepended so the browser can fetch them cross-port.
+// External URLs (http://…) pass through unchanged.
+const resolveUrl = (u: string) =>
+  u && u.startsWith('/uploads/') ? `${API_BASE}${u}` : u;
 ---
 
 <Base title="Photos — Gokul Raam" description="A camera roll of moments worth keeping.">
@@ -58,12 +64,12 @@ const total = photos.length;
         <figure
           class="film-frame"
           data-idx={idx}
-          data-url={p.url}
+          data-url={resolveUrl(p.url)}
           data-caption={p.caption}
           data-taken={p.taken_at}
         >
           {p.url ? (
-            <img src={p.url} alt={p.caption || `frame ${idx + 1}`} loading="lazy" />
+            <img src={resolveUrl(p.url)} alt={p.caption || `frame ${idx + 1}`} loading="lazy" />
           ) : (
             <div class="film-frame__empty">
               <span>no image</span>
@@ -397,6 +403,81 @@ const total = photos.length;
     padding: 2px 8px;
   }
   :global(.photo-add__close:hover) { color: #fff; }
+  :global(.photo-add__tabs) {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  :global(.photo-add__tab) {
+    background: transparent;
+    border: none;
+    color: rgba(245, 239, 227, 0.55);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    padding: 8px 14px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  :global(.photo-add__tab:hover) { color: var(--cream, #f5efe3); }
+  :global(.photo-add__tab.is-active) {
+    color: #d5b275;
+    border-color: #d5b275;
+  }
+  :global(.photo-add__row--file) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  :global(.photo-add__file-hidden) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+  }
+  :global(.photo-add__file-label) {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: 1px dashed rgba(213, 178, 117, 0.4);
+    color: var(--cream, #f5efe3);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 12px;
+    padding: 10px 14px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  :global(.photo-add__file-label:hover) {
+    border-color: #d5b275;
+    background: rgba(213, 178, 117, 0.04);
+  }
+  :global(.photo-add__file-clear) {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: rgba(245, 239, 227, 0.6);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    padding: 6px 10px;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  :global(.photo-add__file-clear:hover) { color: var(--cream, #f5efe3); }
   :global(.photo-add__row) { margin-bottom: 10px; }
   :global(.photo-add__row--split) {
     display: grid;
