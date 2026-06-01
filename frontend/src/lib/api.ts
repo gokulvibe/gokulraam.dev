@@ -114,11 +114,17 @@ export interface Photo {
 
 export const photos = {
   list: () => request<Photo[]>('/api/photos'),
+  create: (body: { url: string; caption?: string; taken_at?: string }) =>
+    request<Photo>('/api/photos', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
   update: (id: number, patch: Partial<Pick<Photo, 'url' | 'caption' | 'taken_at'>>) =>
     request<Photo>(`/api/photos/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(patch),
     }),
+  remove: (id: number) => request<void>(`/api/photos/${id}`, { method: 'DELETE' }),
 };
 
 // ─── Books ────────────────────────────────────────────────────
