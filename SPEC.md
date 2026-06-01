@@ -61,19 +61,39 @@ gamer dark mode.
 
 ## 3. Site Map
 
-| Path | Card # | Section name | Purpose |
+### Public
+
+| Path | Card # | Section | Purpose |
 |---|---|---|---|
 | `/` | — | Folio home | Hero (001) fills viewport; cards 002–007 below |
 | `/work` | 004 | Full chronicle | Saama + freelance + awards + selected projects + certs + education |
 | `/projects` | 006 | Project catalogue | All projects with details |
 | `/til` | 003 | Today I Learnt | Microblog of small lessons |
-| `/til/<slug>` | — | TIL post | Single TIL with markdown body + attachments |
-| `/now` | 002 | Now | What I'm currently doing (weekly refresh) |
-| `/badminton` | 007 | Court diaries | Players + upcoming tournaments + matches |
+| `/til/<slug>` | — | TIL post | Single TIL with markdown body, attachments, share panel |
+| `/til/rss.xml` | — | RSS | TIL feed |
+| `/now` | 002 | Now | What I'm currently doing (live status + facets) |
+| `/badminton` | 007 | Court diaries | Players + upcoming tournaments (scraped daily) |
 | `/uses` | 005 | Uses | Code + runtime + hardware + sound + court + fitness + daily |
-| `/resume` | — | Resume (HTML) | SEO-friendly inline resume |
-| `/resume.pdf` | — | Resume (PDF) | Downloadable PDF |
-| `/admin/*` | — | Admin shell | Single-user CMS for writing TIL (v2+) |
+| `/resume` · `/resume.pdf` | — | Résumé | HTML + downloadable PDF |
+| `/logbook` | — | Logbook | Short-form observations, grouped by day |
+| `/photos` | — | Camera roll | Horizontal film-strip with lightbox |
+| `/guestbook` | — | Guestbook | Visitors leave a note (honeypot + rate-limited) |
+| `/404` | — | Not found | Card-aesthetic 404 with destination picker |
+
+### Gated
+
+| Path | Gate | Purpose |
+|---|---|---|
+| `/admin/login` | — | Admin sign-in (only `/admin/*` write surface) |
+| `/admin/stats` | admin cookie | Page-view analytics — summary, daily chart, top paths/referrers, recent |
+| `/museum/enter` | — | Friend-code entry form |
+| `/museum` | friend OR admin cookie | Six-room exhibit (origins, court, workshop, …) — only people with the code |
+
+### Easter eggs
+
+Typed keywords surface paths that aren't in the nav:
+- Type `snap` (anywhere outside an input) → toast linking to `/photos` + camera-flash overlay
+- Type `knock` → toast linking to `/museum/enter`
 
 ---
 
@@ -202,14 +222,25 @@ they switch to `prerender = false`.
 
 ## 6. Auth Model
 
-**Single user only — Gokul.** No registration, no OAuth, no multi-tenant.
+**Two cookie tiers — admin + friend.** No registration, no OAuth, no multi-tenant.
 
-- bcrypt-hashed password stored in `ADMIN_PASSWORD_HASH` env var
-- `SESSION_SECRET` env var signs session cookies (`itsdangerous`)
-- Cookie: `httpOnly`, `SameSite=Lax`, 30-day expiry
-- `/api/auth/login` validates; `/api/auth/me` returns current user; `/api/auth/logout` clears
+### Admin (Gokul)
+
+- Single user. bcrypt-hashed password in `ADMIN_PASSWORD_HASH` env
+- `SESSION_SECRET` signs the admin cookie (`itsdangerous`)
+- Cookie: `gokulraam_session` · `httpOnly` · 30-day
+- Locally: `SameSite=Lax`. Prod (cross-origin Pages → Render): `SameSite=None; Secure` — enabled by `COOKIE_SECURE=true` on Render
+- `/api/auth/login` validates; `/api/auth/me` returns user; `/api/auth/logout` clears
 - Admin-only routes use `Depends(current_admin)` on the FastAPI side
-- Frontend `/admin/*` routes check `/api/auth/me` and redirect to login if 401
+- Frontend `/admin/*` checks `/api/auth/me` and redirects to login on 401
+
+### Friend (museum visitors)
+
+- No user account — a *shared* code (`FRIEND_CODE` env on Render)
+- `/api/auth/museum-enter` accepts the code, issues `gokulraam_friend_session` (180-day, signed)
+- `museum_visitor` dependency accepts either an admin OR a valid friend cookie
+- No identity carried — anyone with the code reads the museum content
+- Light spam protection: same code, no rate limit; if leaked Gokul rotates `FRIEND_CODE`
 
 ---
 
@@ -233,13 +264,17 @@ they switch to `prerender = false`.
 
 These are explicitly **out of scope** to keep complexity in check:
 
-- Multi-author CMS — only Gokul writes
+- Multi-author CMS *(today)* — only Gokul writes. Multi-tenant is a separate future direction (§10).
 - User accounts, comments, social login
 - E-commerce, payments
 - Native mobile app or installable PWA
 - Full i18n / multi-language
 - Realtime collaboration
-- Heavy WebGL anywhere except as optional v6 polish
+- Heavy WebGL anywhere except as optional polish
+
+*(Light theme was once a non-goal — now shipped as the "Daylight" theme for
+non-dev visitors. The Nocturnal Folio remains the canonical identity; the
+toggle lives top-right, persisted in localStorage.)*
 
 ---
 
@@ -363,7 +398,15 @@ These choices we've already made are forward-compatible — no changes needed:
 
 ## 11. Open Decisions
 
-- **Domain**: `gokulraam.dev` (recommended) · `gokulraam.com` · `gokulraam.me` · `gokulr.in` (cheapest)
-- **Backend host**: Hetzner (cleanest) · Oracle Always Free (₹0 but flaky onboarding)
-- **Badminton data source**: tournamentsoftware.com scraper · SofaScore unofficial API · hand-curated YAML
-- **Editor library for TIL**: textarea + manual preview · EasyMDE · CodeMirror 6 (heavier but best)
+Resolved decisions (recorded for posterity; no longer open):
+- ✅ **Domain** — `gokulraam.dev` (Cloudflare Registrar planned; not yet purchased)
+- ✅ **Backend host** — Render free tier (paired with Neon Postgres + R2 for files)
+- ✅ **Badminton data source** — tournamentsoftware.com scraper with YAML fallback
+- ✅ **Editor library** — TipTap (ProseMirror) with `tiptap-markdown` for round-trip
+
+Still open:
+- **R2 vs ephemeral disk for prod uploads** — code switches automatically when
+  `R2_*` env vars are set. Currently on ephemeral disk (no card on file).
+  Uploaded photos vanish on every Render redeploy.
+- **Custom domain purchase** — deferred until ready to pay (~₹1.5k/yr).
+- **Multi-tenant timing** — §10 spec is ready; no commitment yet.

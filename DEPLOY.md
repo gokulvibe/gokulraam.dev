@@ -243,6 +243,46 @@ Just `git push origin main`. Both Render and Cloudflare Pages have GitHub integr
 ### Local dev still works the same
 Nothing changed for local development. `make dev` still runs against SQLite + local-disk uploads. The Postgres/R2 envs are only set in production.
 
+### Troubleshooting
+
+**Backend stuck on old code (auto-deploy not triggering)**
+
+Symptoms: frontend updates fine on every push (you see new pages), but
+`curl https://gokulraam-backend.onrender.com/openapi.json` shows fewer routes
+than your local backend, or new endpoints return 404 in prod. The `/admin/stats`
+dashboard breaks because the new stats endpoints aren't there.
+
+Diagnose & fix:
+1. Render dashboard → `gokulraam-backend` → **Events** tab
+2. Look for the most recent build attempt:
+   - **No recent attempts** → auto-deploy is paused. Settings → Auto-Deploy → set to Yes → Manual Deploy → "Deploy latest commit".
+   - **Failed builds** → click the failed one → read the log. Most common cause is a new dependency that didn't build on Render's image. Fix the requirement and push again.
+   - **Queued/in progress** → free tier is slow on cold pickup. Wait 10 min then manual deploy if still nothing.
+3. Push an empty commit to nudge the webhook if needed:
+   ```sh
+   git commit --allow-empty -m "chore: trigger render redeploy"
+   git push
+   ```
+
+**Uploaded photo disappeared after redeploy**
+
+Expected on the free tier — Render's filesystem is ephemeral. The Photo DB
+row still exists; only the file on disk is gone. Options:
+- For permanence: paste external URLs (GitHub raw, Imgur direct, picsum) via the "paste url" tab in `/photos` instead of uploading
+- For proper fix: add a card to Cloudflare → set `R2_*` env vars on Render → storage abstraction switches automatically, no code change
+
+**CORS errors after a deploy**
+
+Check `FRONTEND_ORIGIN` on Render. Should be a comma-separated list including:
+- `https://gokulraam-dev.pages.dev`
+- `https://*.gokulraam-dev.pages.dev` (preview branches)
+- `https://gokulraam.dev` (when the custom domain lands)
+
+**Admin login works locally but fails on prod**
+
+Verify `COOKIE_SECURE=true` is set on Render. Without it, the cookie is `SameSite=Lax`
+without `Secure`, which the browser refuses to send cross-origin from Pages → Render.
+
 ### Backing up your DB
 Neon has built-in PITR (point-in-time recovery) on the free tier. For belt-and-braces:
 ```bash
