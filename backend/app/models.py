@@ -334,6 +334,27 @@ class StatusPing(Base):
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class Book(Base):
+    """A book on /bookshelf. Status discriminates the section it appears in.
+    All fields editable inline by admin."""
+    __tablename__ = "books"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    slug: Mapped[str] = mapped_column(String(80), unique=True, index=True)
+    title: Mapped[str] = mapped_column(String(200))
+    author: Mapped[str] = mapped_column(String(120))
+    status: Mapped[str] = mapped_column(String(40), default="want")  # reading | finished | want
+    year: Mapped[str] = mapped_column(String(20), default="")
+    link: Mapped[str] = mapped_column(String(400), default="")     # buy/preview link
+    cover_url: Mapped[str] = mapped_column(String(400), default="")
+    note: Mapped[str] = mapped_column(Text, default="")
+    order: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+
 class GuestbookEntry(Base):
     """Anonymous (or signed) note left by a visitor. No auth required to write,
     but anything with a honeypot value gets dropped at the API. Admin can

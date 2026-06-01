@@ -18,6 +18,7 @@ from app.db import SessionLocal
 from app.models import (
     BadmintonPlayer,
     BadmintonTournament,
+    Book,
     MuseumExhibit,
     NowItem,
     Profile,
@@ -520,6 +521,39 @@ _MUSEUM_DEFAULTS: list[tuple[str, str, str, str, str, str, str]] = [
         "",
     ),
 ]
+
+
+_BOOK_DEFAULTS: list[tuple[str, str, str, str, str, str]] = [
+    # (slug, title, author, status, year, note)
+    ("ddia", "Designing Data-Intensive Applications", "Martin Kleppmann",
+     "reading", "2017",
+     "The book every backend engineer recommends. Living up to the hype."),
+    ("the-go-programming-language", "The Go Programming Language", "Donovan & Kernighan",
+     "want", "2015",
+     "Replace this with anything you want to read next."),
+    ("the-pragmatic-programmer", "The Pragmatic Programmer", "Hunt & Thomas",
+     "finished", "1999",
+     "Read it twice — first time too early, second time it clicked."),
+    ("zero-to-one", "Zero to One", "Peter Thiel",
+     "finished", "2014",
+     "Counterintuitive in places, prescient in others."),
+    ("placeholder-1", "— add a book", "— author",
+     "reading", "",
+     "Sign in as admin and click any field to edit. Cover URLs can be any public image link."),
+]
+
+
+def seed_books() -> int:
+    with SessionLocal() as db:
+        if db.scalar(select(Book.id).limit(1)) is not None:
+            return 0
+        for order, (slug, title, author, status, year, note) in enumerate(_BOOK_DEFAULTS):
+            db.add(Book(
+                slug=slug, title=title, author=author, status=status,
+                year=year, note=note, order=order,
+            ))
+        db.commit()
+        return len(_BOOK_DEFAULTS)
 
 
 def seed_museum() -> int:

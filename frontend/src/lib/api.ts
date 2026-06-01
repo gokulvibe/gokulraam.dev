@@ -101,6 +101,33 @@ export const museum = {
     }),
 };
 
+// ─── Books ────────────────────────────────────────────────────
+
+export interface Book {
+  id: number;
+  slug: string;
+  title: string;
+  author: string;
+  status: 'reading' | 'finished' | 'want' | string;
+  year: string;
+  link: string;
+  cover_url: string;
+  note: string;
+  order: number;
+}
+
+export const books = {
+  list: () => request<Book[]>('/api/books'),
+  update: (
+    id: number,
+    patch: Partial<Pick<Book, 'title' | 'author' | 'status' | 'year' | 'link' | 'cover_url' | 'note'>>,
+  ) =>
+    request<Book>(`/api/books/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+};
+
 // ─── Guestbook ────────────────────────────────────────────────
 
 export interface GuestbookEntry {

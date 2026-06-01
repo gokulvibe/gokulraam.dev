@@ -388,6 +388,30 @@ class GuestbookEntryOut(BaseModel):
     created_at: datetime
 
 
+class BookOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    slug: str
+    title: str
+    author: str
+    status: str
+    year: str
+    link: str
+    cover_url: str
+    note: str
+    order: int
+
+
+class BookUpdate(BaseModel):
+    title: str | None = Field(default=None, max_length=200)
+    author: str | None = Field(default=None, max_length=120)
+    status: str | None = Field(default=None, max_length=40)
+    year: str | None = Field(default=None, max_length=20)
+    link: str | None = Field(default=None, max_length=400)
+    cover_url: str | None = Field(default=None, max_length=400)
+    note: str | None = None
+
+
 class GuestbookEntryIn(BaseModel):
     name: str = Field(default="", max_length=80)
     message: str = Field(min_length=1, max_length=1000)
