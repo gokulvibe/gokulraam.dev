@@ -80,6 +80,13 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://gokulraa
           <a href="/now" class="hover:text-cream transition-colors">now</a>
           <a href="/badminton" class="hover:text-cream transition-colors">badminton</a>
           <a href="/uses" class="hover:text-cream transition-colors">uses</a>
+          <a
+            href="/guestbook"
+            class="text-cream hover:text-gold transition-colors inline-flex items-center gap-1.5"
+            title="Sign the guestbook"
+          >
+            <span aria-hidden class="text-gold">✎</span> guestbook
+          </a>
           <a href="/resume.pdf" class="text-ember hover:opacity-80 transition-opacity">cv ↗</a>
         </nav>
       </header>
