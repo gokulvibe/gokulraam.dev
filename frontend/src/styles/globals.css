@@ -1324,6 +1324,51 @@ body { padding-bottom: 4rem; }
   padding: 3rem 2.5rem 2.5rem;
 }
 .card-clone.is-open .game-card__hint { display: none; }
+
+/* ─── Expanded-card clones are view-only ─────────────────────────
+   ExpandableCard's expander does `cloneNode(true)` on the source card.
+   The clone's astro-islands re-hydrate as fresh React instances — they
+   show edit affordances and accept clicks, but their saves can't reach
+   the original element, and even mid-edit state desyncs visibly. Per
+   the design fix: disable editing in the clone entirely and direct
+   admins to the dedicated section page (/work, /now, /uses, etc).
+   View pages render the same EditableField components without the
+   cloning indirection, so editing works there. */
+.card-clone .editable,
+.card-clone .editable--admin {
+  pointer-events: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  cursor: default !important;
+}
+.card-clone .editable:hover,
+.card-clone .editable--admin:hover {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.card-clone .editable__pencil { display: none !important; }
+.card-clone .editable-input,
+.card-clone .editable-row { display: none !important; }
+
+/* Small ribbon at the top of the expanded clone so admin users know to
+   edit elsewhere. Only shows when the clone contains an admin editable. */
+.card-clone.is-open:has(.editable--admin)::before {
+  content: "👁  view only · edit from the section page";
+  position: sticky;
+  top: 0;
+  display: block;
+  text-align: center;
+  font-family: theme('fontFamily.mono');
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: rgba(245, 239, 227, 0.55);
+  padding: 8px 16px;
+  background: rgba(213, 178, 117, 0.08);
+  border-bottom: 1px solid rgba(213, 178, 117, 0.22);
+  margin: -3rem -2.5rem 1.5rem;
+  z-index: 5;
+}
 .card-clone.is-open .game-card__numeral { top: 1.4rem; left: 1.8rem; }
 .card-clone.is-open .game-card__glyph   { top: 1.4rem; right: 1.8rem; }
 .card-clone.is-open .game-card__watermark { opacity: 0.025; }
