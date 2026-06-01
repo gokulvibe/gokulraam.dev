@@ -114,12 +114,39 @@ export interface Photo {
 
 export const photos = {
   list: () => request<Photo[]>('/api/photos'),
+  create: (body: { url: string; caption?: string; taken_at?: string }) =>
+    request<Photo>('/api/photos', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  upload: async (file: File, caption: string, taken_at: string): Promise<Photo> => {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('caption', caption);
+    fd.append('taken_at', taken_at);
+    const res = await fetch(`${API_BASE}/api/photos/upload`, {
+      method: 'POST',
+      credentials: 'include',
+      body: fd,
+    });
+    if (!res.ok) throw new ApiError(res.status, await res.text());
+    return res.json();
+  },
   update: (id: number, patch: Partial<Pick<Photo, 'url' | 'caption' | 'taken_at'>>) =>
     request<Photo>(`/api/photos/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(patch),
     }),
+  remove: (id: number) => request<void>(`/api/photos/${id}`, { method: 'DELETE' }),
 };
+
+/** Resolve a Photo URL — locally-stored uploads have a `/uploads/…`
+ * relative path and need the backend origin prefixed for the browser. */
+export function resolvePhotoUrl(url: string): string {
+  if (!url) return url;
+  if (url.startsWith('/uploads/')) return `${API_BASE}${url}`;
+  return url;
+}
 
 // ─── Books ────────────────────────────────────────────────────
 

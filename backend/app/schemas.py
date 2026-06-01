@@ -405,6 +405,12 @@ class PhotoUpdate(BaseModel):
     taken_at: str | None = Field(default=None, max_length=40)
 
 
+class PhotoCreate(BaseModel):
+    url: str = Field(min_length=1, max_length=400)
+    caption: str = Field(default="", max_length=300)
+    taken_at: str = Field(default="", max_length=40)
+
+
 class BookOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
