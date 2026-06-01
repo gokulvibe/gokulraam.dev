@@ -479,10 +479,18 @@ const resolveUrl = (u: string) =>
   }
   :global(.photo-add__file-clear:hover) { color: var(--cream, #f5efe3); }
   :global(.photo-add__row) { margin-bottom: 10px; }
+  /* Stack on mobile; side-by-side once there's actual room. The fixed
+     200px column was making the caption input ~80px wide on a 375px
+     viewport. */
   :global(.photo-add__row--split) {
     display: grid;
-    grid-template-columns: 1fr 200px;
+    grid-template-columns: 1fr;
     gap: 10px;
+  }
+  @media (min-width: 540px) {
+    :global(.photo-add__row--split) {
+      grid-template-columns: 1fr 200px;
+    }
   }
   :global(.photo-add__input) {
     width: 100%;

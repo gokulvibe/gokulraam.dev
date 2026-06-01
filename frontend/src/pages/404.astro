@@ -191,8 +191,9 @@ const path = Astro.url?.pathname ?? '/';
 
   .foof-typer {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 12px;
+    gap: 8px 12px;
     padding: 12px 14px;
     border: 1px solid var(--rule, rgba(255,255,255,0.1));
     border-left: 2px solid #d5b275;
@@ -207,6 +208,10 @@ const path = Astro.url?.pathname ?? '/';
     letter-spacing: 0.18em;
     color: rgba(245,239,227,0.65);
     flex-shrink: 0;
+    width: 100%;
+  }
+  @media (min-width: 540px) {
+    .foof-typer__label { width: auto; }
   }
   .foof-typer input {
     flex: 1;
