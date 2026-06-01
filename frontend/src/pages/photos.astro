@@ -1,0 +1,94 @@
+---
+export const prerender = false;
+
+import Base from '@/layouts/Base.astro';
+import EditableField from '@/components/admin/EditableField';
+
+const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8000';
+
+interface PhotoRow {
+  id: number;
+  slug: string;
+  url: string;
+  caption: string;
+  taken_at: string;
+  order: number;
+}
+
+let photosList: PhotoRow[] = [];
+let backendOk = true;
+try {
+  const res = await fetch(`${API_BASE}/api/photos`);
+  if (res.ok) photosList = await res.json();
+  else backendOk = false;
+} catch {
+  backendOk = false;
+}
+---
+
+<Base title="Photos — Gokul Raam" description="A small grid of photos.">
+  <header class="mb-12">
+    <div class="label mb-4">// photos</div>
+    <h1 class="display text-5xl md:text-6xl">
+      A small<br /><span class="italic text-ember">grid.</span>
+    </h1>
+    <p class="mt-6 max-w-xl text-mist">
+      Moments worth keeping. Tap any caption to read. Admin can paste image
+      URLs (Imgur, GitHub user-content, anywhere public) into the inline
+      editor.
+    </p>
+  </header>
+
+  {!backendOk && (
+    <div class="card border-rose/30 bg-rose/5 mb-8">
+      <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-rose mb-2">// backend offline</p>
+      <p class="text-sm text-parchment">The API at <code class="font-mono">{API_BASE}</code> is unreachable.</p>
+    </div>
+  )}
+
+  <div class="photo-grid">
+    {photosList.map((p) => (
+      <figure class="photo-card">
+        {p.url ? (
+          <img src={p.url} alt={p.caption || 'photo'} loading="lazy" />
+        ) : (
+          <div class="photo-card__empty">
+            no image — paste a url
+          </div>
+        )}
+        <div class="photo-card__meta">
+          <p class="photo-card__caption">
+            <EditableField
+              client:load
+              endpoint={`/api/photos/${p.id}`}
+              field="caption"
+              initial={p.caption}
+              className="font-display"
+              placeholder="caption"
+            />
+          </p>
+          <p class="photo-card__taken">
+            <EditableField
+              client:load
+              endpoint={`/api/photos/${p.id}`}
+              field="taken_at"
+              initial={p.taken_at}
+              className="font-mono"
+              placeholder="when · where"
+            />
+          </p>
+          <p class="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ghost">
+            <EditableField
+              client:load
+              endpoint={`/api/photos/${p.id}`}
+              field="url"
+              initial={p.url}
+              className="font-mono"
+              placeholder="image url"
+            />
+          </p>
+        </div>
+      </figure>
+    ))}
+  </div>
+</Base>

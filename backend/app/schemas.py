@@ -388,6 +388,22 @@ class GuestbookEntryOut(BaseModel):
     created_at: datetime
 
 
+class PhotoOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    slug: str
+    url: str
+    caption: str
+    taken_at: str
+    order: int
+
+
+class PhotoUpdate(BaseModel):
+    url: str | None = Field(default=None, max_length=400)
+    caption: str | None = Field(default=None, max_length=300)
+    taken_at: str | None = Field(default=None, max_length=40)
+
+
 class BookOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int

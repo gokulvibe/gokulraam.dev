@@ -101,6 +101,26 @@ export const museum = {
     }),
 };
 
+// ─── Photos ───────────────────────────────────────────────────
+
+export interface Photo {
+  id: number;
+  slug: string;
+  url: string;
+  caption: string;
+  taken_at: string;
+  order: number;
+}
+
+export const photos = {
+  list: () => request<Photo[]>('/api/photos'),
+  update: (id: number, patch: Partial<Pick<Photo, 'url' | 'caption' | 'taken_at'>>) =>
+    request<Photo>(`/api/photos/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+};
+
 // ─── Books ────────────────────────────────────────────────────
 
 export interface Book {

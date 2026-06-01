@@ -334,6 +334,23 @@ class StatusPing(Base):
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class Photo(Base):
+    """A single photo on /photos. External image URL (no R2 dependency).
+    Captions, taken-at, and url are all admin-editable inline."""
+    __tablename__ = "photos"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    slug: Mapped[str] = mapped_column(String(80), unique=True, index=True)
+    url: Mapped[str] = mapped_column(String(400), default="")
+    caption: Mapped[str] = mapped_column(String(300), default="")
+    taken_at: Mapped[str] = mapped_column(String(40), default="")  # free-form (e.g. "Coimbatore · Mar 2025")
+    order: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+
 class Book(Base):
     """A book on /bookshelf. Status discriminates the section it appears in.
     All fields editable inline by admin."""

@@ -21,6 +21,7 @@ from app.models import (
     Book,
     MuseumExhibit,
     NowItem,
+    Photo,
     Profile,
     ProfileStat,
     Project,
@@ -541,6 +542,27 @@ _BOOK_DEFAULTS: list[tuple[str, str, str, str, str, str]] = [
      "reading", "",
      "Sign in as admin and click any field to edit. Cover URLs can be any public image link."),
 ]
+
+
+_PHOTO_DEFAULTS: list[tuple[str, str, str, str]] = [
+    # (slug, url, caption, taken_at)
+    # All empty by default — admin fills them in. Drop public image URLs
+    # (Imgur direct links, GitHub user-content, any CDN) into the url field.
+    ("photo-1", "", "first photo · paste any image url",  ""),
+    ("photo-2", "", "second photo",                       ""),
+    ("photo-3", "", "third photo",                        ""),
+    ("photo-4", "", "fourth photo",                       ""),
+]
+
+
+def seed_photos() -> int:
+    with SessionLocal() as db:
+        if db.scalar(select(Photo.id).limit(1)) is not None:
+            return 0
+        for order, (slug, url, caption, taken_at) in enumerate(_PHOTO_DEFAULTS):
+            db.add(Photo(slug=slug, url=url, caption=caption, taken_at=taken_at, order=order))
+        db.commit()
+        return len(_PHOTO_DEFAULTS)
 
 
 def seed_books() -> int:
