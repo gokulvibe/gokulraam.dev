@@ -72,7 +72,10 @@ export default function EditableTags({ postId, initial }: Props) {
   }
 
   return (
-    <div>
+    <div
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
       <input
         className="editable-input font-mono text-sm"
         value={draft}

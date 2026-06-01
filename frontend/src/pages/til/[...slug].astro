@@ -8,6 +8,7 @@ import Base from '@/layouts/Base.astro';
 import EditableTitle from '@/components/admin/EditableTitle';
 import EditableTags from '@/components/admin/EditableTags';
 import EditableBody from '@/components/admin/EditableBody';
+import TilShare from '@/components/TilShare';
 import EditableAttachments from '@/components/admin/EditableAttachments';
 import PostStatusActions from '@/components/admin/PostStatusActions';
 import TilDraftLoader from '@/components/admin/TilDraftLoader';
@@ -66,6 +67,11 @@ if (slug) {
 
 const fmt = (s: string) =>
   new Date(s).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
+
+const canonicalUrl = new URL(
+  Astro.url.pathname,
+  Astro.site ?? 'https://gokulraam.dev',
+).toString();
 ---
 
 <Base
@@ -118,6 +124,13 @@ const fmt = (s: string) =>
         />
 
         <EditableAttachments client:load postId={post.id} initial={post.attachments} />
+
+        <TilShare
+          client:load
+          slug={post.slug}
+          apiBase={API_BASE}
+          pageUrl={canonicalUrl}
+        />
       </article>
     )
   }

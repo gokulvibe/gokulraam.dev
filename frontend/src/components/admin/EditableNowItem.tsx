@@ -97,7 +97,11 @@ export default function EditableNowItem({
   }
 
   return (
-    <span style={{ display: 'inline-block', width: '100%' }}>
+    <span
+      style={{ display: 'inline-block', width: '100%' }}
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
       {multiline ? (
         <textarea
           ref={inputRef as React.RefObject<HTMLTextAreaElement>}

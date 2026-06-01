@@ -216,7 +216,10 @@ export default function EditableBody({ postId, initialMd, initialHtml }: Props) 
   }
 
   return (
-    <div>
+    <div
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
       <EditorToolbar editor={editor} />
       <div className="tt-editor">
         <EditorContent editor={editor} />
