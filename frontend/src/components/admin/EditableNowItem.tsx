@@ -6,7 +6,7 @@
  * input with save/cancel. Saves via PATCH /api/now/<slug>.
  */
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { now } from '@/lib/api';
 import { useIsAdmin } from './useIsAdmin';
 
@@ -49,10 +49,27 @@ export default function EditableNowItem({
       setValue(updated.value);
       setEditing(false);
       setStatus('');
+      // Sync peers (e.g. expanded-card clone vs original)
+      window.dispatchEvent(
+        new CustomEvent('editable-now:saved', {
+          detail: { slug, value: updated.value },
+        }),
+      );
     } catch {
       setStatus('save failed');
     }
   }
+
+  useEffect(() => {
+    function onPeerSaved(e: Event) {
+      const d = (e as CustomEvent<{ slug: string; value: string }>).detail;
+      if (!d || d.slug !== slug) return;
+      setValue(d.value);
+      setDraft(d.value);
+    }
+    window.addEventListener('editable-now:saved', onPeerSaved);
+    return () => window.removeEventListener('editable-now:saved', onPeerSaved);
+  }, [slug]);
 
   function cancel() {
     setDraft(value);

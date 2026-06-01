@@ -91,11 +91,11 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://gokulraa
           <a href="/resume.pdf" class="text-ember hover:opacity-80 transition-opacity">cv ↗</a>
         </nav>
 
-        <!-- Mobile-only hamburger -->
+        <!-- Mobile-only hamburger (hidden on md+ via the .mobile-menu-btn media query) -->
         <button
           type="button"
           id="mobile-menu-btn"
-          class="mobile-menu-btn md:hidden"
+          class="mobile-menu-btn"
           aria-label="Open menu"
           aria-expanded="false"
           aria-controls="mobile-menu"
@@ -256,6 +256,10 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://gokulraa
       }
       .mobile-menu-btn:hover {
         border-color: rgba(213, 178, 117, 0.6);
+      }
+      /* Hide hamburger on tablet/desktop — the inline nav takes over. */
+      @media (min-width: 768px) {
+        .mobile-menu-btn { display: none; }
       }
       .mobile-menu-btn span {
         display: block;
@@ -582,12 +586,20 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://gokulraa
           setTimeout(done, 800); // safety net
         }
 
-        // Click delegation
+        // Click delegation. We want clicking *background* of a card to
+        // expand it, but clicking on interactive content inside should
+        // do its own thing (navigate / edit / submit) without expanding.
+        // The inline-edit selectors are the important addition — without
+        // them, clicking "save"/"cancel"/etc. expanded the card instead
+        // of running the React handler.
         document.addEventListener('click', (e) => {
           const card = e.target.closest('[data-expandable]:not(.card-clone)');
           if (card) {
-            // Don't expand if clicking a real link/button inside the card
-            const inner = e.target.closest('a, button');
+            const inner = e.target.closest(
+              'a, button, input, textarea, select, [contenteditable="true"], ' +
+              '.editable, .editable--admin, .editable__pencil, .editable-input, ' +
+              '.editable-row, .tt-editor, .ProseMirror, .post-actions'
+            );
             if (inner && !inner.classList.contains('card-close')) return;
             e.preventDefault();
             expand(card);
