@@ -95,16 +95,23 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://gokulraa
 
     <div class="mx-auto max-w-6xl px-6 py-7 md:px-10 md:py-10">
       <header class="mb-14 flex items-center justify-between">
-        <a
-          href="/"
-          class="group flex items-baseline gap-2 font-mono text-[12.5px] tracking-[0.18em] uppercase"
-          data-egg-longpress="snap"
-        >
-          <span class="text-gold">◆</span>
-          <span class="text-cream">gokul</span>
-          <span class="text-mist">/</span>
-          <span class="text-mist group-hover:text-cream transition-colors">raam</span>
-        </a>
+        <div class="flex items-baseline gap-2 font-mono text-[12.5px] tracking-[0.18em] uppercase">
+          <!-- The diamond is a separate button so triple-tapping it doesn't
+               also try to navigate. Hidden from screen readers — the actual
+               brand is the anchor next to it. -->
+          <button
+            type="button"
+            class="egg-tap egg-tap--diamond text-gold"
+            data-egg-tap="snap"
+            aria-hidden
+            tabindex="-1"
+          >◆</button>
+          <a href="/" class="group flex items-baseline gap-2">
+            <span class="text-cream">gokul</span>
+            <span class="text-mist">/</span>
+            <span class="text-mist group-hover:text-cream transition-colors">raam</span>
+          </a>
+        </div>
         <nav class="hidden gap-7 font-mono text-[11.5px] uppercase tracking-[0.18em] text-mist md:flex">
           <a href="/work" class="hover:text-cream transition-colors">work</a>
           <a href="/projects" class="hover:text-cream transition-colors">projects</a>
@@ -162,7 +169,13 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://gokulraa
       <footer class="mt-32 border-t border-rule pt-8">
         <div class="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
           <div class="flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.16em] text-ghost">
-            <span class="text-gold" data-egg-longpress="knock" role="button" tabindex="-1" aria-hidden>◇</span>
+            <button
+              type="button"
+              class="egg-tap egg-tap--diamond text-gold"
+              data-egg-tap="knock"
+              aria-hidden
+              tabindex="-1"
+            >◇</button>
             <span>folio · mmxxvi · coimbatore</span>
           </div>
           <div class="flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[11px] uppercase tracking-[0.16em] text-mist">
@@ -511,17 +524,32 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://gokulraa
         100% { transform: translate(0, 0); }
       }
 
-      /* Long-press easter-egg targets. Suppress iOS's link-share callout
-         and text-selection so the hold gesture feels intentional. The
-         element keeps its normal cursor/styling otherwise. */
-      [data-egg-longpress] {
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        user-select: none;
-      }
-      .footer [data-egg-longpress],
-      footer [data-egg-longpress] {
+      /* Triple-tap easter-egg targets. Look like a plain glyph; reset
+         the button defaults so they sit inline with surrounding text. */
+      .egg-tap {
+        background: transparent;
+        border: none;
+        padding: 0;
+        margin: 0;
+        font: inherit;
+        color: inherit;
         cursor: pointer;
+        line-height: 1;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .egg-tap--diamond {
+        /* Larger hit area on mobile without changing the visual */
+        padding: 6px 4px;
+        margin: -6px -4px;
+        transition: transform 0.12s ease, opacity 0.12s ease;
+      }
+      .egg-tap--diamond:active {
+        transform: scale(0.86);
+        opacity: 0.7;
+      }
+      .egg-tap--diamond:focus { outline: none; }
+      .egg-tap--diamond.egg-tap--armed {
+        text-shadow: 0 0 8px rgba(213, 178, 117, 0.5);
       }
 
       @media (prefers-reduced-motion: reduce) {

@@ -186,87 +186,65 @@ export default function EasterEggs() {
 
     document.addEventListener('keydown', onKey);
 
-    // ─── Mobile-friendly long-press triggers ─────────────────────
-    // Touch devices can't fire `keydown` reliably (virtual keyboards
-    // type into inputs, not the page). For mobile parity we bind a
-    // long-press handler to any element marked `data-egg-longpress="<word>"`.
-    // Currently:
-    //   • Header brand ◆ gokul/raam  → "snap"  (photos)
-    //   • Footer       ◇             → "knock" (museum)
-    // Works on desktop too — hold the mouse button on the target.
-    const longPressMs = 700;
-    const longPressCleanups: Array<() => void> = [];
+    // ─── Triple-tap triggers (mobile-friendly) ───────────────────
+    // Virtual keyboards on phones only type into focused inputs, so the
+    // keyword path is desktop-only in practice. Mark a non-link element
+    // with `data-egg-tap="<word>"` and three taps within ~800ms fire the
+    // same effect + toast.
+    //
+    // Why not the brand link itself? Each tap on an <a href> tries to
+    // navigate. We use small dedicated button glyphs (the gold ◆ in the
+    // header and ◇ in the footer) so taps only count.
+    //
+    // Currently wired:
+    //   • Header  ◆  → "snap"  (photos)
+    //   • Footer  ◇  → "knock" (museum)
+    const TAPS_NEEDED = 3;
+    const TAP_WINDOW_MS = 800;
+    const tapCleanups: Array<() => void> = [];
 
-    function bindLongPress(el: HTMLElement, word: string) {
+    function bindTapCount(el: HTMLElement, word: string) {
       const trig = TRIGGERS.find((t) => t.word === word);
       if (!trig) return;
-      let timer: number | null = null;
-      let fired = false;
+      let count = 0;
+      let resetTimer: number | null = null;
 
-      const fire = () => {
-        fired = true;
-        timer = null;
+      function fire() {
+        count = 0;
+        if (resetTimer) { window.clearTimeout(resetTimer); resetTimer = null; }
+        el.classList.remove('egg-tap--armed');
         trig.effect?.();
         rememberDiscovery(trig.ledgerKey);
         showToast(trig.toast);
-      };
-
-      function onStart() {
-        fired = false;
-        if (timer) window.clearTimeout(timer);
-        timer = window.setTimeout(fire, longPressMs);
       }
-      function onCancel() {
-        if (timer) {
-          window.clearTimeout(timer);
-          timer = null;
+
+      function onClick() {
+        count += 1;
+        if (resetTimer) window.clearTimeout(resetTimer);
+        if (count >= TAPS_NEEDED) {
+          fire();
+          return;
         }
-      }
-      function onClickCapture(e: Event) {
-        // If the long-press fired, suppress the click that would
-        // otherwise navigate (e.g. the header is an <a href="/">).
-        if (fired) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          fired = false;
-        }
+        // Subtle "you're getting somewhere" hint after the second tap.
+        if (count >= TAPS_NEEDED - 1) el.classList.add('egg-tap--armed');
+        resetTimer = window.setTimeout(() => {
+          count = 0;
+          el.classList.remove('egg-tap--armed');
+        }, TAP_WINDOW_MS);
       }
 
-      el.addEventListener('touchstart', onStart, { passive: true });
-      el.addEventListener('touchend', onCancel);
-      el.addEventListener('touchcancel', onCancel);
-      el.addEventListener('touchmove', onCancel, { passive: true });
-      el.addEventListener('mousedown', onStart);
-      el.addEventListener('mouseup', onCancel);
-      el.addEventListener('mouseleave', onCancel);
-      // Capture phase so we run before the browser dispatches the click action.
-      el.addEventListener('click', onClickCapture, true);
-      // Suppress the OS context menu on long-press (desktop right-click stays
-      // unaffected — only the synthesized one from mobile long-press fires here).
-      const onCtx = (e: Event) => { if (fired) e.preventDefault(); };
-      el.addEventListener('contextmenu', onCtx);
-
-      longPressCleanups.push(() => {
-        el.removeEventListener('touchstart', onStart);
-        el.removeEventListener('touchend', onCancel);
-        el.removeEventListener('touchcancel', onCancel);
-        el.removeEventListener('touchmove', onCancel);
-        el.removeEventListener('mousedown', onStart);
-        el.removeEventListener('mouseup', onCancel);
-        el.removeEventListener('mouseleave', onCancel);
-        el.removeEventListener('click', onClickCapture, true);
-        el.removeEventListener('contextmenu', onCtx);
-      });
+      el.addEventListener('click', onClick);
+      tapCleanups.push(() => el.removeEventListener('click', onClick));
     }
 
-    document.querySelectorAll<HTMLElement>('[data-egg-longpress]').forEach((el) => {
-      const word = el.getAttribute('data-egg-longpress');
-      if (word) bindLongPress(el, word);
+    document.querySelectorAll<HTMLElement>('[data-egg-tap]').forEach((el) => {
+      const word = el.getAttribute('data-egg-tap');
+      if (word) bindTapCount(el, word);
     });
 
     return () => {
       document.removeEventListener('keydown', onKey);
-      longPressCleanups.forEach((c) => c());
+      tapCleanups.forEach((c) => c());
     };
   }, []);
 
