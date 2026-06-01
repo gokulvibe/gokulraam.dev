@@ -27,6 +27,8 @@ _COLUMN_ADDS: list[tuple[str, str, str]] = [
     ("profile", "casual_interests", "VARCHAR(300) DEFAULT ''"),
     # Analytics — flag self-views so they don't pollute the stats
     ("page_views", "is_admin", "BOOLEAN DEFAULT 0"),
+    # /now categorized — group items into building/reading/watching/etc.
+    ("now_items", "kind", "VARCHAR(40) DEFAULT ''"),
 ]
 
 

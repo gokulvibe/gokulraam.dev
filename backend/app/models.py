@@ -43,13 +43,15 @@ class TilAttachment(Base):
 
 
 class NowItem(Base):
-    """Fixed-slug rows for the /now section. Slug + label are read-only;
-    only `value` is editable. Seven seeded entries: headline + 6 facets.
-    """
+    """Fixed-slug rows for the /now section. `kind` groups items into
+    sections (building / playing / watching / reading / listening /
+    learning / following / headline). Slug + label + kind are seeded and
+    stable; only `value` is editable inline."""
     __tablename__ = "now_items"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     slug: Mapped[str] = mapped_column(String(40), unique=True, index=True)
+    kind: Mapped[str] = mapped_column(String(40), default="", index=True)
     label: Mapped[str] = mapped_column(String(40))
     value: Mapped[str] = mapped_column(Text)
     order: Mapped[int] = mapped_column(Integer, default=0)

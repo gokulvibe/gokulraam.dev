@@ -214,6 +214,7 @@ export function uploadUrl(stored_path: string): string {
 
 export interface NowItem {
   slug: string;
+  kind: string;
   label: string;
   value: string;
   order: number;

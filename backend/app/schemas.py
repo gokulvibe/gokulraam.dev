@@ -60,6 +60,7 @@ class NowItemOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     slug: str
+    kind: str
     label: str
     value: str
     order: int
