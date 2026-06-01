@@ -1,0 +1,20 @@
+---
+import Base from '@/layouts/Base.astro';
+import StatsDashboard from '@/components/admin/StatsDashboard';
+---
+
+<Base title="Stats · admin" description="Page-view analytics dashboard">
+  <header class="mb-12">
+    <div class="label mb-4">// admin · stats</div>
+    <h1 class="display text-5xl md:text-6xl">
+      Who's been<br /><span class="italic text-ember">visiting.</span>
+    </h1>
+    <p class="mt-4 max-w-xl text-mist text-sm">
+      Page views minus your own. Real visitors only. Tracking ping fires on
+      initial load; no client-side fingerprinting beyond what your browser
+      already volunteers in <code class="font-mono text-xs">User-Agent</code>.
+    </p>
+  </header>
+
+  <StatsDashboard client:load />
+</Base>

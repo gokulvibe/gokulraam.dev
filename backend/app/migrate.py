@@ -25,6 +25,8 @@ _COLUMN_ADDS: list[tuple[str, str, str]] = [
     # Light theme — casual bio + interests
     ("profile", "casual_about", "TEXT DEFAULT ''"),
     ("profile", "casual_interests", "VARCHAR(300) DEFAULT ''"),
+    # Analytics — flag self-views so they don't pollute the stats
+    ("page_views", "is_admin", "BOOLEAN DEFAULT 0"),
 ]
 
 

@@ -1888,6 +1888,91 @@ body { padding-bottom: 4rem; }
   color: var(--c-text-muted);
 }
 
+/* ─── Stats dashboard ─────────────────────────────────────── */
+
+.stat-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 140px;
+  padding: 12px;
+  border: 1px solid theme('colors.rule');
+  border-radius: 0.5rem;
+  background: theme('colors.smoke');
+}
+.stat-chart__bar {
+  flex: 1 1 0;
+  min-width: 2px;
+  background: theme('colors.bone');
+  border-radius: 2px;
+  transition: background 0.2s ease;
+  cursor: pointer;
+}
+.stat-chart__bar.is-data {
+  background: theme('colors.ember');
+  opacity: 0.7;
+}
+.stat-chart__bar:hover {
+  opacity: 1;
+}
+
+.stat-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.3rem;
+  overflow: hidden;
+}
+.stat-row__bar {
+  position: absolute;
+  inset: 0;
+  background: rgba(234, 88, 12, 0.06);
+  pointer-events: none;
+  z-index: 0;
+}
+.stat-row__label {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  font-size: 13px;
+  color: theme('colors.cream');
+}
+.stat-row__count {
+  position: relative;
+  z-index: 1;
+  font-family: theme('fontFamily.mono');
+  font-size: 11px;
+  color: theme('colors.ember');
+  letter-spacing: 0.06em;
+}
+
+.stat-recent {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.45rem 0.4rem;
+  border-bottom: 1px solid theme('colors.rule');
+}
+.stat-recent:last-child { border-bottom: 0; }
+.stat-recent:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+[data-theme='light'] .stat-chart {
+  background: var(--c-bg-2);
+  border-color: var(--c-rule);
+}
+[data-theme='light'] .stat-chart__bar { background: rgba(74, 67, 56, 0.18); }
+[data-theme='light'] .stat-chart__bar.is-data {
+  background: var(--c-accent);
+  opacity: 0.85;
+}
+[data-theme='light'] .stat-row__bar { background: rgba(122, 140, 92, 0.10); }
+[data-theme='light'] .stat-row__count { color: var(--c-accent); }
+[data-theme='light'] .stat-recent { border-bottom-color: var(--c-rule); }
+
 /* ═══════════════════════════════════════════════════════════
    MUSEUM — friends-only "Daylight in a small museum" aesthetic.
    Lives on /museum and /museum/enter. Independent palette from

@@ -232,6 +232,34 @@ export async function patchEntity(endpoint: string, field: string, value: string
   });
 }
 
+// ─── Analytics / stats (admin-only reads) ──────────────────────
+
+export interface StatsSummary {
+  total_views: number;
+  last_7_days: number;
+  last_30_days: number;
+  last_24_hours: number;
+  unique_paths: number;
+  first_view_at: string | null;
+}
+export interface DailyView { date: string; count: number; }
+export interface TopPath { path: string; count: number; }
+export interface TopReferrer { host: string; count: number; }
+export interface PageViewRow {
+  path: string;
+  referrer: string;
+  user_agent: string;
+  created_at: string;
+}
+
+export const stats = {
+  summary: () => request<StatsSummary>('/api/stats/summary'),
+  daily: (days = 30) => request<DailyView[]>(`/api/stats/daily?days=${days}`),
+  topPaths: (limit = 20) => request<TopPath[]>(`/api/stats/top-paths?limit=${limit}`),
+  topReferrers: (limit = 15) => request<TopReferrer[]>(`/api/stats/top-referrers?limit=${limit}`),
+  recent: (limit = 50) => request<PageViewRow[]>(`/api/stats/recent?limit=${limit}`),
+};
+
 // ─── Search ─────────────────────────────────────────────────────
 
 export interface SearchHit {

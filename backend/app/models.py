@@ -341,4 +341,5 @@ class PageView(Base):
     path: Mapped[str] = mapped_column(String(300), index=True)
     referrer: Mapped[str] = mapped_column(String(500), default="")
     user_agent: Mapped[str] = mapped_column(String(500), default="")
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
