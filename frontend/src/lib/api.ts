@@ -65,6 +65,40 @@ export const auth = {
     }),
   logout: () => request<{ status: string }>('/api/auth/logout', { method: 'POST' }),
   me: () => request<{ username: string }>('/api/auth/me'),
+  museumEnter: (code: string) =>
+    request<{ status: string }>('/api/auth/museum-enter', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    }),
+  museumLeave: () =>
+    request<{ status: string }>('/api/auth/museum-leave', { method: 'POST' }),
+};
+
+// ─── Museum ────────────────────────────────────────────────────
+
+export interface MuseumExhibit {
+  id: number;
+  slug: string;
+  room_label: string;
+  title: string;
+  kicker: string;
+  body_md: string;
+  body_html: string;
+  photo_url: string;
+  photo_caption: string;
+  order: number;
+}
+
+export const museum = {
+  list: () => request<MuseumExhibit[]>('/api/museum'),
+  update: (
+    id: number,
+    patch: Partial<Pick<MuseumExhibit, 'room_label' | 'title' | 'kicker' | 'body_md' | 'photo_url' | 'photo_caption'>>,
+  ) =>
+    request<MuseumExhibit>(`/api/museum/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
 };
 
 // ─── TIL ───────────────────────────────────────────────────────

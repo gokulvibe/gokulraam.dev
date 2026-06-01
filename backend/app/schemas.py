@@ -347,3 +347,30 @@ class StatusPingIn(BaseModel):
     detail: str = Field(default="", max_length=200)
     # If state is unchanged from the last ping, the server preserves started_at
     # so durations make sense. If state changes, started_at resets.
+
+
+# ─── Museum exhibits ──────────────────────────────────────────
+
+
+class MuseumExhibitOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    slug: str
+    room_label: str
+    title: str
+    kicker: str
+    body_md: str
+    photo_url: str
+    photo_caption: str
+    order: int
+    updated_at: datetime
+
+
+class MuseumExhibitUpdate(BaseModel):
+    room_label: str | None = Field(default=None, max_length=40)
+    title: str | None = Field(default=None, max_length=160)
+    kicker: str | None = Field(default=None, max_length=200)
+    body_md: str | None = None
+    photo_url: str | None = Field(default=None, max_length=400)
+    photo_caption: str | None = Field(default=None, max_length=160)

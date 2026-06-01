@@ -1,0 +1,37 @@
+---
+import '@/styles/globals.css';
+import MuseumEnterForm from '@/components/museum/MuseumEnterForm';
+---
+
+<!doctype html>
+<html lang="en" data-museum>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Museum — gokulraam.dev</title>
+    <meta name="robots" content="noindex,nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..700,30..100;1,9..144,300..700,30..100&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="museum-body">
+    <main class="museum-enter-shell">
+      <p class="museum-enter__kicker">a quiet wing of the site</p>
+      <h1 class="museum-enter__title">The <span class="italic">Museum.</span></h1>
+      <p class="museum-enter__lede">
+        Six small rooms about my life, kept for people I trust.
+        If you've been given a code, this door opens.
+      </p>
+
+      <MuseumEnterForm client:load />
+
+      <p class="museum-enter__back">
+        <a href="/">← back to the rest of the site</a>
+      </p>
+    </main>
+  </body>
+</html>

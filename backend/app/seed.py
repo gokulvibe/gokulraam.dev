@@ -18,6 +18,7 @@ from app.db import SessionLocal
 from app.models import (
     BadmintonPlayer,
     BadmintonTournament,
+    MuseumExhibit,
     NowItem,
     Profile,
     ProfileStat,
@@ -430,6 +431,114 @@ def seed_profile() -> int:
         if inserted:
             db.commit()
     return inserted
+
+
+# ─── Museum exhibits (friends-only /museum) ──────────────────────
+
+_MUSEUM_DEFAULTS: list[tuple[str, str, str, str, str, str, str]] = [
+    # (slug, room_label, title, kicker, body_md, photo_url, photo_caption)
+    (
+        "entrance",
+        "ROOM I · ENTRANCE",
+        "Welcome, traveller.",
+        "this is where I keep the things I show only to people I trust.",
+        (
+            "If you're here, it's because someone gave you the code. Thank you for coming.\n\n"
+            "The other parts of this site are for recruiters and strangers. They're shiny and full of "
+            "metrics and tech stacks. This place is quieter — closer to a small museum a friend invited "
+            "you into. Take your time. Wander."
+        ),
+        "",
+        "",
+    ),
+    (
+        "origins",
+        "ROOM II · ORIGINS",
+        "Coimbatore, late nineties.",
+        "where I came from.",
+        (
+            "Replace this with the story of where you grew up — the streets, the smells, the family "
+            "you came from. A paragraph or two. Friends like reading this kind of thing more than "
+            "you'd guess.\n\n"
+            "(You can drop a childhood photo above — just paste an Imgur or GitHub user-content URL "
+            "into the photo field.)"
+        ),
+        "",
+        "",
+    ),
+    (
+        "coming-of-age",
+        "ROOM III · COMING OF AGE",
+        "Kumaraguru, four years.",
+        "college, friends, the first time I wrote anything that worked.",
+        (
+            "Replace this with what college was like — late nights, the first big project, the "
+            "friends you kept, the ones you lost. The moment code clicked. NaviGuide was here.\n\n"
+            "Photos from that time go a long way."
+        ),
+        "",
+        "",
+    ),
+    (
+        "the-court",
+        "ROOM IV · THE COURT",
+        "Badminton, every week without fail.",
+        "the thing I look forward to most.",
+        (
+            "Replace this with your court story — when you started, the players you watch, the time "
+            "you actually beat someone better than you, the time you didn't. The backhand you've been "
+            "chasing for two years.\n\n"
+            "Action shot would land beautifully here."
+        ),
+        "",
+        "",
+    ),
+    (
+        "the-workshop",
+        "ROOM V · THE WORKSHOP",
+        "What's making me tick right now.",
+        "current chapter.",
+        (
+            "Replace this with whatever's currently lighting you up — a project, a book, a person, "
+            "a question you can't put down. The 'now', but more honest than the public /now page.\n\n"
+            "This room can change as often as you like."
+        ),
+        "",
+        "",
+    ),
+    (
+        "closing",
+        "ROOM VI · CLOSING NOTE",
+        "Thanks for visiting.",
+        "before you go.",
+        (
+            "Replace this with anything you want friends to take away — a thank-you, a poem you like, "
+            "an open invitation. Maybe a way to reach you that isn't email.\n\n"
+            "I'm glad you came."
+        ),
+        "",
+        "",
+    ),
+]
+
+
+def seed_museum() -> int:
+    with SessionLocal() as db:
+        if db.scalar(select(MuseumExhibit.id).limit(1)) is not None:
+            return 0
+        for order, (slug, room_label, title, kicker, body_md, photo_url, photo_caption) in enumerate(_MUSEUM_DEFAULTS):
+            db.add(MuseumExhibit(
+                slug=slug,
+                room_label=room_label,
+                title=title,
+                kicker=kicker,
+                body_md=body_md,
+                photo_url=photo_url,
+                photo_caption=photo_caption,
+                order=order,
+            ))
+        db.commit()
+        return len(_MUSEUM_DEFAULTS)
 
 
 def seed_til_from_mdx() -> int:

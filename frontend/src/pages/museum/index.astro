@@ -1,0 +1,202 @@
+---
+// SSR — checks the friend/admin cookie via the backend and redirects to
+// /museum/enter if missing. After auth, fetches the exhibits.
+export const prerender = false;
+
+import '@/styles/globals.css';
+import EditableField from '@/components/admin/EditableField';
+import AdminBar from '@/components/admin/AdminBar';
+
+const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8000';
+
+interface Exhibit {
+  id: number;
+  slug: string;
+  room_label: string;
+  title: string;
+  kicker: string;
+  body_md: string;
+  body_html: string;
+  photo_url: string;
+  photo_caption: string;
+  order: number;
+}
+
+const cookie = Astro.request.headers.get('cookie') ?? '';
+let exhibits: Exhibit[] = [];
+let needsAuth = false;
+
+try {
+  const res = await fetch(`${API_BASE}/api/museum`, {
+    headers: cookie ? { cookie } : {},
+  });
+  if (res.status === 401) {
+    needsAuth = true;
+  } else if (res.ok) {
+    exhibits = await res.json();
+  }
+} catch {
+  // Backend unreachable — fall through to the auth gate so the visitor isn't
+  // shown an empty museum.
+  needsAuth = true;
+}
+
+if (needsAuth) {
+  return Astro.redirect('/museum/enter');
+}
+---
+
+<!doctype html>
+<html lang="en" data-museum>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Museum — gokulraam.dev</title>
+    <meta name="robots" content="noindex,nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..700,30..100;1,9..144,300..700,30..100&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="museum-body">
+    <div class="museum-grain"></div>
+
+    <header class="museum-header">
+      <a href="/" class="museum-header__home" title="Leave the museum">
+        ← gokulraam.dev
+      </a>
+      <p class="museum-header__motto">
+        a small museum, kept for friends.
+      </p>
+    </header>
+
+    <main class="museum">
+      {exhibits.map((ex, i) => (
+        <article
+          class="museum-exhibit"
+          style={`--exhibit-index: ${i}; --exhibit-delay: ${i * 0.06}s;`}
+          data-museum-exhibit
+        >
+          <aside class="museum-exhibit__plaque">
+            <span class="museum-exhibit__room">
+              <EditableField
+                client:load
+                endpoint={`/api/museum/${ex.id}`}
+                field="room_label"
+                initial={ex.room_label}
+                className="font-mono"
+              />
+            </span>
+            {ex.photo_url ? (
+              <figure class="museum-exhibit__frame">
+                <img
+                  src={ex.photo_url}
+                  alt={ex.photo_caption || ex.title}
+                  class="museum-exhibit__photo"
+                  loading="lazy"
+                />
+                {ex.photo_caption && (
+                  <figcaption class="museum-exhibit__caption">
+                    <EditableField
+                      client:load
+                      endpoint={`/api/museum/${ex.id}`}
+                      field="photo_caption"
+                      initial={ex.photo_caption}
+                      className="font-mono"
+                    />
+                  </figcaption>
+                )}
+              </figure>
+            ) : (
+              <div class="museum-exhibit__photo-edit">
+                <p class="museum-exhibit__photo-empty">no photo</p>
+                <EditableField
+                  client:load
+                  endpoint={`/api/museum/${ex.id}`}
+                  field="photo_url"
+                  initial=""
+                  placeholder="paste an image URL"
+                  className="font-mono"
+                />
+              </div>
+            )}
+          </aside>
+
+          <div class="museum-exhibit__text">
+            <h2 class="museum-exhibit__title">
+              <EditableField
+                client:load
+                endpoint={`/api/museum/${ex.id}`}
+                field="title"
+                initial={ex.title}
+                className="museum-exhibit__title-text"
+              />
+            </h2>
+            <p class="museum-exhibit__kicker">
+              <EditableField
+                client:load
+                endpoint={`/api/museum/${ex.id}`}
+                field="kicker"
+                initial={ex.kicker}
+              />
+            </p>
+            <div class="museum-exhibit__body">
+              <EditableField
+                client:load
+                endpoint={`/api/museum/${ex.id}`}
+                field="body_md"
+                initial={ex.body_md}
+                format="longtext"
+                className="museum-exhibit__body-text"
+              />
+            </div>
+          </div>
+        </article>
+      ))}
+
+      <footer class="museum-footer">
+        <p class="museum-footer__mark">✦</p>
+        <p class="museum-footer__text">
+          end of the rooms. thank you for visiting.
+        </p>
+        <button id="museum-leave" type="button" class="museum-footer__leave">
+          leave the museum
+        </button>
+      </footer>
+    </main>
+
+    <!-- AdminBar (only renders if signed in as admin) — lets you edit + sign out -->
+    <AdminBar client:load />
+
+    <script>
+      // Fade exhibits in as you scroll
+      document.querySelectorAll('[data-museum-exhibit]').forEach((el) => {
+        const io = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((e) => {
+              if (e.isIntersecting) {
+                e.target.classList.add('is-visible');
+                io.unobserve(e.target);
+              }
+            });
+          },
+          { threshold: 0.1, rootMargin: '-5% 0px' },
+        );
+        io.observe(el);
+      });
+
+      // Leave-museum button: clears friend cookie, sends visitor home
+      document.getElementById('museum-leave')?.addEventListener('click', async () => {
+        try {
+          const { auth } = await import('@/lib/api');
+          await auth.museumLeave();
+        } finally {
+          window.location.href = '/';
+        }
+      });
+    </script>
+  </body>
+</html>

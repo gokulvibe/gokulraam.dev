@@ -302,6 +302,26 @@ class UsesItem(Base):
     )
 
 
+class MuseumExhibit(Base):
+    """A single 'room' in the friends-only museum at /museum. Six seeded by
+    default; admin edits the title/kicker/body/photo_url inline."""
+    __tablename__ = "museum_exhibits"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    slug: Mapped[str] = mapped_column(String(60), unique=True, index=True)
+    room_label: Mapped[str] = mapped_column(String(40))      # "ROOM I · ENTRANCE"
+    title: Mapped[str] = mapped_column(String(160))
+    kicker: Mapped[str] = mapped_column(String(200), default="")
+    body_md: Mapped[str] = mapped_column(Text, default="")
+    photo_url: Mapped[str] = mapped_column(String(400), default="")
+    photo_caption: Mapped[str] = mapped_column(String(160), default="")
+    order: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+
 class StatusPing(Base):
     """Single-row record holding the admin's latest 'currently' state.
     Updated via POST /api/status (admin-only). Read by /api/status (public)."""

@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     # cookies still work over plain http://localhost.
     cookie_secure: bool = False
 
+    # Museum access — shared code given to friends. They enter it at
+    # /museum/enter to get the friend session cookie. Leave empty to disable
+    # museum entirely (Gokul-as-admin still has access via admin cookie).
+    friend_code: str = ""
+
     # Defaults to SQLite at backend/data/app.db. Production overrides with
     # a postgres:// URL (Render env var). SQLAlchemy handles the dialect.
     database_url: str = f"sqlite:///{DATA_DIR / 'app.db'}"
