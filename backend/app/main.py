@@ -12,11 +12,12 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from app.migrate import run_migrations
-from app.routers import auth, badminton, books, guestbook, museum, now, og, photos, profile, projects, search, stats, status as status_router, til, uses, work
+from app.routers import auth, badminton, books, guestbook, logbook, museum, now, og, photos, profile, projects, search, stats, status as status_router, til, uses, work
 from app.scrapers.bwf import run_scrape
 from app.seed import (
     seed_badminton,
     seed_books,
+    seed_logbook,
     seed_museum,
     seed_now_items,
     seed_photos,
@@ -57,6 +58,8 @@ async def lifespan(_: FastAPI):  # noqa: ANN201
         print(f"[seed] inserted {n} books")
     if (n := seed_photos()):
         print(f"[seed] inserted {n} photo placeholders")
+    if (n := seed_logbook()):
+        print(f"[seed] inserted {n} logbook entries")
 
     # Schedule daily badminton scrape at 06:00 local time. Best-effort —
     # failures don't crash startup; errors land in logs.
@@ -127,6 +130,7 @@ app.include_router(museum.router, prefix="/api")
 app.include_router(books.router, prefix="/api")
 app.include_router(photos.router, prefix="/api")
 app.include_router(guestbook.router, prefix="/api")
+app.include_router(logbook.router, prefix="/api")
 app.include_router(search.router, prefix="/api")
 app.include_router(status_router.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")

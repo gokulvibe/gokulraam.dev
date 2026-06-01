@@ -435,3 +435,25 @@ class GuestbookEntryIn(BaseModel):
     # Honeypot field — real browsers leave this empty; bots fill every input.
     # Renamed to something innocuous so it doesn't look like a honeypot in DOM.
     website: str = Field(default="", max_length=200)
+
+
+# ─── Logbook ──────────────────────────────────────────────────
+
+
+class LogbookEntryOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    body: str
+    tag: str
+    created_at: datetime
+
+
+class LogbookEntryCreate(BaseModel):
+    body: str = Field(min_length=1, max_length=500)
+    tag: str = Field(default="", max_length=40)
+
+
+class LogbookEntryUpdate(BaseModel):
+    body: str | None = Field(default=None, min_length=1, max_length=500)
+    tag: str | None = Field(default=None, max_length=40)
