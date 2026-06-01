@@ -334,6 +334,22 @@ class StatusPing(Base):
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class GuestbookEntry(Base):
+    """Anonymous (or signed) note left by a visitor. No auth required to write,
+    but anything with a honeypot value gets dropped at the API. Admin can
+    delete entries; otherwise everything is visible."""
+    __tablename__ = "guestbook_entries"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(80), default="")    # optional; "anonymous" if empty
+    message: Mapped[str] = mapped_column(Text)                    # required
+    # Lightweight rate-limit fingerprint — we only store a hash of the IP so we
+    # can collapse rapid duplicate posts, never the raw IP itself.
+    ip_hash: Mapped[str] = mapped_column(String(64), default="")
+    hidden: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
 class PageView(Base):
     __tablename__ = "page_views"
 

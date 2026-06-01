@@ -101,6 +101,26 @@ export const museum = {
     }),
 };
 
+// ─── Guestbook ────────────────────────────────────────────────
+
+export interface GuestbookEntry {
+  id: number;
+  name: string;
+  message: string;
+  created_at: string;
+}
+
+export const guestbook = {
+  list: () => request<GuestbookEntry[]>('/api/guestbook'),
+  post: (body: { name: string; message: string; website: string }) =>
+    request<GuestbookEntry>('/api/guestbook', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  remove: (id: number) =>
+    request<void>(`/api/guestbook/${id}`, { method: 'DELETE' }),
+};
+
 // ─── TIL ───────────────────────────────────────────────────────
 
 export const til = {

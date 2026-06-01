@@ -374,3 +374,23 @@ class MuseumExhibitUpdate(BaseModel):
     body_md: str | None = None
     photo_url: str | None = Field(default=None, max_length=400)
     photo_caption: str | None = Field(default=None, max_length=160)
+
+
+# ─── Guestbook ────────────────────────────────────────────────
+
+
+class GuestbookEntryOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    message: str
+    created_at: datetime
+
+
+class GuestbookEntryIn(BaseModel):
+    name: str = Field(default="", max_length=80)
+    message: str = Field(min_length=1, max_length=1000)
+    # Honeypot field — real browsers leave this empty; bots fill every input.
+    # Renamed to something innocuous so it doesn't look like a honeypot in DOM.
+    website: str = Field(default="", max_length=200)

@@ -12,7 +12,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from app.migrate import run_migrations
-from app.routers import auth, badminton, museum, now, og, profile, projects, search, stats, status as status_router, til, uses, work
+from app.routers import auth, badminton, guestbook, museum, now, og, profile, projects, search, stats, status as status_router, til, uses, work
 from app.scrapers.bwf import run_scrape
 from app.seed import (
     seed_badminton,
@@ -118,6 +118,7 @@ app.include_router(projects.router, prefix="/api")
 app.include_router(profile.router, prefix="/api")
 app.include_router(og.router, prefix="/api")
 app.include_router(museum.router, prefix="/api")
+app.include_router(guestbook.router, prefix="/api")
 app.include_router(search.router, prefix="/api")
 app.include_router(status_router.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
