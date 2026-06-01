@@ -1,4 +1,31 @@
 ---
+// Silence the SSR "Invalid hook call" warnings from @astrojs/react's
+// component sniffer.
+//
+// @astrojs/react decides whether a given component is a React component by
+// invoking it as a plain function inside a `Tester`, then checking the return
+// for the react.element $$typeof symbol. Calling the component outside a real
+// render trips React's hook-call tracker → 3+ "Invalid hook call" lines per
+// page render. The actual rendering, which goes through proper renderToString
+// paths, works correctly — the warnings are noise.
+//
+// We filter only the noise (message + stack contains `Object.check`, the
+// renderer's check fn). Real hook-rule violations in app code still log.
+if (typeof (globalThis as any).__astroReactHookFilter === 'undefined') {
+  (globalThis as any).__astroReactHookFilter = true;
+  const stripIfSniffer = (orig: (...a: unknown[]) => void) =>
+    (...args: unknown[]) => {
+      const msg = String(args[0] ?? '');
+      if (msg.includes('Invalid hook call')) {
+        const stack = new Error().stack ?? '';
+        if (stack.includes('Object.check')) return;
+      }
+      orig(...args);
+    };
+  console.error = stripIfSniffer(console.error);
+  console.warn = stripIfSniffer(console.warn);
+}
+
 import '@/styles/globals.css';
 import AdminBar from '@/components/admin/AdminBar';
 import CmdK from '@/components/CmdK';
