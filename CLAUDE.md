@@ -106,12 +106,22 @@ cards works without expanding them.
 
 ### Easter eggs
 
-Two trigger words, listened-for globally in `EasterEggs.tsx` (mounted in Base):
-- `snap` — camera flash + toast to `/photos`
-- `knock` — toast to `/museum/enter`
+All registered in `frontend/src/components/EasterEggs.tsx`. Discovery
+timestamps go to `localStorage.egg.found` (keyed by `ledgerKey`).
 
-Adding more is a one-line entry in `TRIGGERS` array. Discovery state lives in
-`localStorage.egg.found` (unused for now — future "secrets" panel).
+| Trigger | Where | Effect | Reveals |
+|---|---|---|---|
+| Type `snap` | anywhere (desktop keyboard) | camera-flash overlay + toast | `/photos` |
+| Type `knock` | anywhere (desktop keyboard) | page rumble + 3 audio thumps + haptic + toast | `/museum/enter` |
+| **3 taps anywhere** on the page | clicks outside inputs/buttons/cards (mobile-friendly) | same as `snap` | `/photos` |
+| **5 taps anywhere** on the page | same — count evaluated after 700ms pause | same as `knock` | `/museum/enter` |
+| Click digits 4 → 0 → 4 in order | only on the `/404` page | digits glow gold, link cards pulse | nothing — playful confirmation |
+
+Notes:
+- **Audio + haptic are gated** on `<html data-sound="on|off">` (SoundToggle in the corner).
+- **Tap counter shows a discoverability chip** at bottom-center after the 2nd tap (`tap · ● ● ○ ○ ○`).
+- Adding a new keyword: append to `TRIGGERS` in `EasterEggs.tsx`. Adding a new tap-count: extend `TAP_COUNTS` in the page-tap handler.
+- localStorage data is ready for a future "secrets panel" UI that lists discovered eggs and hints undiscovered ones.
 
 ### Backend conventions
 

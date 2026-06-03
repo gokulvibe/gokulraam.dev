@@ -1901,6 +1901,50 @@ body { padding-bottom: 4rem; }
   border-color: var(--c-rule-strong);
 }
 
+/* ─── Sound toggle (sits next to ThemeToggle) ─────────────── */
+
+.sound-toggle {
+  position: fixed;
+  top: 1rem;
+  right: 4rem; /* sits just left of the theme toggle */
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 999px;
+  background: rgba(11, 11, 15, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(201, 169, 110, 0.18);
+  color: var(--c-text);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+.sound-toggle:hover {
+  border-color: var(--c-rule-strong);
+  transform: scale(1.08);
+}
+.sound-toggle.is-muted {
+  color: rgba(245, 239, 227, 0.45);
+  position: fixed; /* re-anchor; keep specificity */
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: rgba(213, 178, 117, 0.7);
+}
+[data-theme='light'] .sound-toggle {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(74, 67, 56, 0.18);
+  box-shadow: 0 2px 12px -4px rgba(74, 67, 56, 0.15);
+}
+[data-theme='light'] .sound-toggle.is-muted {
+  color: rgba(28, 26, 20, 0.45);
+  text-decoration-color: rgba(184, 148, 85, 0.7);
+}
+
 /* ─── Ambient music player (light mode only) ──────────────── */
 
 .ambient-player {

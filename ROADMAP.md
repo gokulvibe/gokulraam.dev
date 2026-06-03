@@ -177,6 +177,31 @@
 
 ---
 
+## Easter eggs — registered triggers
+
+Quick reference so I don't forget what's there. Source of truth lives
+in `frontend/src/components/EasterEggs.tsx`.
+
+| # | Trigger | What it does | Reveals |
+|---|---|---|---|
+| 1 | Type `snap` anywhere (desktop) | camera-flash overlay + toast | `/photos` |
+| 2 | Type `knock` anywhere (desktop) | page rumble + 3 audio thumps + haptic buzz + toast | `/museum/enter` |
+| 3 | Tap **3 times** anywhere on the page (mobile-friendly) | same as `snap` — after a 700ms pause | `/photos` |
+| 4 | Tap **5 times** anywhere on the page | same as `knock` — after a 700ms pause | `/museum/enter` |
+| 5 | On `/404`, click the digits **4 → 0 → 4** in order | digits glow gold, link cards pulse | nothing — just a playful nod |
+
+Subtle visual hint while tapping: a small `tap · ● ● ○ ○ ○` chip
+appears at the bottom of the screen after the 2nd tap so the gesture
+isn't invisible.
+
+Audio + haptic are mutable via the **SoundToggle** (♪ chip top-right
+of every page). When muted, the page-shake still plays on knocks.
+
+Discovery state is stored in `localStorage.egg.found` — wire it into a
+future "secrets" panel that lists found eggs + hints undiscovered ones.
+
+---
+
 ## Backlog (small, doable any time)
 
 - ⏳ Real content backfill — fill `—` placeholders in `/uses`, write actual TIL posts, populate museum rooms, replace seeded sample photos with personal ones
@@ -230,3 +255,10 @@
 | 2026-06-01 | Mobile sweep: hamburger nav, hero font scaling, camera-roll heights, lightbox padding |
 | 2026-06-01 | Photos add+delete (admin): create from URL or upload; 15 MB cap; whitelist of image MIMEs; on-delete file unlink for local uploads |
 | 2026-06-01 | Bug fixes: card-expander stops swallowing edit clicks, cross-island save sync via CustomEvent, stopPropagation on every editable, hooks-rule fix for `adminOnly`, `@astrojs/react` SSR sniffer warning filtered |
+| 2026-06-01 | Render deploy unstuck: migrator was SQLite-only (`PRAGMA table_info`) and silently no-op'd on Postgres → schema stale → crash at startup. Fixed via SQLAlchemy `Inspector` + per-dialect DDL translation. Auto-deploy was paused after failures; triggered via Render MCP. |
+| 2026-06-01 | Neon connection-pool fix: `pool_pre_ping=True` + `pool_recycle=300` for Postgres to survive Neon's free-tier idle-suspend. |
+| 2026-06-01 | Knock egg gains audio (WebAudio 3-thump sequence) + page rumble. |
+| 2026-06-02 | Knock haptic: `navigator.vibrate([50,110,50,110,50])` synced with the audio thumps (Android-only — Apple removed Web Vibration). |
+| 2026-06-02 | Easter eggs: replaced long-press / per-element triple-tap with **page-wide tap counter** (3 → photos, 5 → museum, evaluated after 700ms idle); small "tap · ● ● ●" chip appears after the 2nd tap for discoverability. Removed `/photos` from the mobile hamburger so it stays an egg-only destination. |
+| 2026-06-03 | PWA: `manifest.webmanifest` + 192/512 standard & maskable PNG icons + apple-touch-icon + Apple PWA meta (`apple-mobile-web-app-capable` etc.). No service worker yet — installability only. Per-scheme `theme-color`. |
+| 2026-06-03 | Sound on/off toggle (♪) next to the theme toggle. Persists to localStorage, mirrored to `<html data-sound>`. EasterEggs gates knock audio + haptic; visual page-shake always plays. |

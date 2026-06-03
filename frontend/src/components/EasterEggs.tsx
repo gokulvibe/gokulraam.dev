@@ -91,16 +91,25 @@ function cameraFlash() {
   setTimeout(() => flash.remove(), 700);
 }
 
+/** Visitors can mute sound + haptic via the SoundToggle. Pre-paint
+ *  script in Base.astro mirrors localStorage → `<html data-sound>` so
+ *  we can read it synchronously from anywhere. */
+function soundOn(): boolean {
+  return typeof document !== 'undefined' &&
+    document.documentElement.getAttribute('data-sound') !== 'off';
+}
+
 /**
  * Door-knock effect. Three quick low-frequency thumps via WebAudio
  * (no asset file needed) + a tiny page shake synced to each thump +
  * haptic feedback on devices that support `navigator.vibrate`.
- * Skips the audio if AudioContext is blocked or unavailable; the
- * visual still fires.
+ *
+ * The visual page-shake always plays. Audio + haptic respect the
+ * SoundToggle (data-sound on the <html> element).
  *
  * Haptic support: Android Chrome/Firefox/Edge — yes. iOS Safari —
  * no (Apple disabled the Vibration API). On unsupported devices
- * the call is a no-op; audio + shake still play.
+ * the call is a no-op; visual still plays.
  */
 function doorKnock() {
   // Visual: small page rumble. Class is removed after the animation
@@ -110,6 +119,10 @@ function doorKnock() {
   void document.body.offsetWidth;
   document.body.classList.add('egg-knock-shake');
   setTimeout(() => document.body.classList.remove('egg-knock-shake'), 700);
+
+  // If the user has muted sound, skip both audio and haptic. The
+  // visual already played above — it stays.
+  if (!soundOn()) return;
 
   // Haptic: three short buzzes spaced to match the audio thumps
   // (knocks at 0ms, 160ms, 320ms). Pattern alternates vibrate/pause
