@@ -11,7 +11,7 @@ from app.storage import R2Storage, get_storage
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from app.migrate import run_migrations
+from app.migrate import run_data_backfills, run_migrations
 from app.routers import auth, badminton, books, guestbook, logbook, museum, now, og, photos, profile, projects, search, stats, status as status_router, til, uses, work
 from app.scrapers.bwf import run_scrape
 from app.seed import (
@@ -60,6 +60,11 @@ async def lifespan(_: FastAPI):  # noqa: ANN201
         print(f"[seed] inserted {n} photo placeholders")
     if (n := seed_logbook()):
         print(f"[seed] inserted {n} logbook entries")
+
+    # Content backfills — run after seeds so seeded rows are eligible.
+    # Each entry only fires when the row still holds its original default.
+    if (n := run_data_backfills()):
+        print(f"[migrate] data-backfilled {n} rows")
 
     # Schedule daily badminton scrape at 06:00 local time. Best-effort —
     # failures don't crash startup; errors land in logs.

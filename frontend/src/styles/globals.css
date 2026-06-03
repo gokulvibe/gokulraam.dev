@@ -2142,12 +2142,16 @@ body { padding-bottom: 4rem; }
 .stat-chart {
   display: flex;
   align-items: flex-end;
-  gap: 3px;
-  height: 140px;
-  padding: 12px;
+  gap: 2px;
+  height: 110px;
+  padding: 10px;
   border: 1px solid theme('colors.rule');
   border-radius: 0.5rem;
   background: theme('colors.smoke');
+  overflow: hidden;
+}
+@media (min-width: 640px) {
+  .stat-chart { height: 140px; gap: 3px; padding: 12px; }
 }
 .stat-chart__bar {
   flex: 1 1 0;
@@ -2616,6 +2620,137 @@ body { padding-bottom: 4rem; }
 }
 [data-museum] .editable-row button.cancel { color: var(--m-mist); }
 
+/* ─── Admin "eggs" reference modal ────────────────────────── */
+
+.egg-ref-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: egg-ref-fade 0.18s ease-out;
+}
+@keyframes egg-ref-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.egg-ref {
+  width: 100%;
+  max-width: 540px;
+  background: rgba(11, 11, 15, 0.96);
+  border: 1px solid rgba(213, 178, 117, 0.32);
+  border-left: 2px solid #d5b275;
+  border-radius: 2px;
+  padding: 22px 24px 24px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+}
+.egg-ref__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+.egg-ref__title {
+  font-family: theme('fontFamily.mono');
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: theme('colors.gold');
+}
+.egg-ref__close {
+  background: transparent;
+  border: none;
+  color: rgba(245, 239, 227, 0.5);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+.egg-ref__close:hover { color: theme('colors.cream'); }
+.egg-ref__hint {
+  font-family: theme('fontFamily.mono');
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: theme('colors.ghost');
+  margin-bottom: 14px;
+}
+.egg-ref__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.egg-ref__item {
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.015);
+}
+.egg-ref__row {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+}
+.egg-ref__num {
+  font-family: theme('fontFamily.mono');
+  font-size: 10.5px;
+  color: theme('colors.gold');
+  letter-spacing: 0.16em;
+}
+.egg-ref__trigger {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 15px;
+  color: theme('colors.cream');
+  line-height: 1.35;
+}
+.egg-ref__detail {
+  margin-top: 6px;
+  margin-left: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: baseline;
+  font-family: theme('fontFamily.mono');
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+.egg-ref__effect { color: rgba(245, 239, 227, 0.65); }
+.egg-ref__arrow  { color: theme('colors.ghost'); }
+.egg-ref__reveals { color: theme('colors.ember'); }
+.egg-ref__footer {
+  margin-top: 16px;
+  font-family: theme('fontFamily.mono');
+  font-size: 10px;
+  color: theme('colors.ghost');
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+.egg-ref__footer code {
+  color: theme('colors.cream');
+  background: rgba(255, 255, 255, 0.04);
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-size: 10.5px;
+}
+
+[data-theme='light'] .egg-ref {
+  background: rgba(252, 248, 240, 0.98);
+  border-color: rgba(184, 148, 85, 0.5);
+  color: #1c1a14;
+}
+[data-theme='light'] .egg-ref__close { color: rgba(28, 26, 20, 0.5); }
+[data-theme='light'] .egg-ref__trigger { color: #1c1a14; }
+[data-theme='light'] .egg-ref__effect { color: rgba(28, 26, 20, 0.7); }
+
 /* ─── TIL share panel ─────────────────────────────────────── */
 
 .til-share {
@@ -2717,5 +2852,83 @@ body { padding-bottom: 4rem; }
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* ─── Print stylesheet ─────────────────────────────────────
+   Goal: ⌘P on any page gives a paper-ready render. Primary
+   target is /resume — chrome + atmosphere hides, typography
+   tightens, links unfold for paper. */
+@media print {
+  /* Pure white, real black; printers don't render our palette well. */
+  :root,
+  [data-theme='light'],
+  [data-theme='dark'] {
+    --c-bg: #ffffff;
+    --c-text: #111111;
+    --c-mist: #555555;
+    --c-rule: #ddd;
+  }
+  html,
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+  /* Kill atmosphere + chrome that doesn't belong on paper. */
+  .atmosphere,
+  .grid-veil,
+  .grain,
+  header nav,
+  .mobile-menu-btn,
+  .mobile-menu,
+  .theme-toggle,
+  .sound-toggle,
+  .admin-bar,
+  .egg-toast,
+  .egg-flash,
+  .egg-tap-indicator,
+  .ambient-player,
+  footer {
+    display: none !important;
+  }
+  /* No card chrome — flatten everything to text + rules. */
+  .card,
+  .game-card {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    page-break-inside: avoid;
+  }
+  .card-clone,
+  .card-backdrop {
+    display: none !important;
+  }
+  /* Headings tighter, body slightly smaller for one-pagers. */
+  body {
+    font-size: 10.5pt !important;
+    line-height: 1.45 !important;
+  }
+  h1, .display { font-size: 22pt !important; line-height: 1.1 !important; }
+  h2 { font-size: 14pt !important; }
+  h3 { font-size: 12pt !important; }
+  /* Expand link URLs after the anchor text so paper readers can
+     follow them. Skip mailto/tel/# anchors (clutter). */
+  a[href]:not([href^="#"]):not([href^="mailto:"]):not([href^="tel:"])::after {
+    content: " (" attr(href) ")";
+    font-weight: normal;
+    font-size: 0.85em;
+    color: #555;
+  }
+  /* Margin / page settings — give every printer some bleed room. */
+  @page {
+    margin: 18mm 16mm;
+  }
+  /* Don't break inside a single role/project block. */
+  section,
+  article,
+  .role,
+  .project {
+    page-break-inside: avoid;
   }
 }

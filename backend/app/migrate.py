@@ -79,3 +79,57 @@ def run_migrations() -> int:
             conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {ddl_final}"))
             added += 1
     return added
+
+
+# ─── Data backfills (idempotent UPDATEs) ────────────────────
+#
+# When the seed defaults change after the table is already populated,
+# new defaults don't take effect on existing rows (seeds are
+# insert-if-missing, not upsert). Use this list to push *targeted*
+# updates: a row is only modified when EVERY column in `where` matches
+# its old value exactly — so an entry the user has already edited is
+# never trampled.
+#
+# Schema:
+#   { "table": "uses_items",
+#     "where": {"slug": "keyboard", "name": "— keyboard"},
+#     "set":   {"name": "Keychron K3", "note": "low-profile · mac layout"} }
+#
+# Once a backfill applies it can never re-fire: the `where` clause is
+# the *old* value, which no longer exists in the row after the UPDATE.
+# Safe to leave entries in the list forever.
+
+_DataBackfill = dict[str, "str | dict[str, str]"]
+
+_DATA_BACKFILLS: list[_DataBackfill] = [
+    # entries land here as content drafts are merged.
+]
+
+
+def run_data_backfills() -> int:
+    """Returns number of rows updated this run (across all backfills)."""
+    total = 0
+    with engine.begin() as conn:
+        for bf in _DATA_BACKFILLS:
+            table = bf.get("table")
+            where = bf.get("where") or {}
+            set_ = bf.get("set") or {}
+            if not (isinstance(table, str) and isinstance(where, dict) and isinstance(set_, dict)):
+                continue
+            if not where or not set_:
+                continue
+            # Skip if the table doesn't exist (e.g. on a fresh DB where
+            # create_all hasn't fired yet — shouldn't happen given call
+            # order in main.py, but defensive).
+            if _existing_columns(conn, table) is None:
+                continue
+            where_sql = " AND ".join(f"{c} = :w_{c}" for c in where)
+            set_sql = ", ".join(f"{c} = :s_{c}" for c in set_)
+            params = {**{f"w_{c}": v for c, v in where.items()},
+                      **{f"s_{c}": v for c, v in set_.items()}}
+            result = conn.execute(
+                text(f"UPDATE {table} SET {set_sql} WHERE {where_sql}"),
+                params,
+            )
+            total += result.rowcount or 0
+    return total

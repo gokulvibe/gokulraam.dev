@@ -69,7 +69,21 @@ const resolveUrl = (u: string) =>
           data-taken={p.taken_at}
         >
           {p.url ? (
-            <img src={resolveUrl(p.url)} alt={p.caption || `frame ${idx + 1}`} loading="lazy" />
+            <>
+              <img
+                src={resolveUrl(p.url)}
+                alt={p.caption || `frame ${idx + 1}`}
+                loading="lazy"
+                data-frame-img
+              />
+              <!-- Shown only if the <img> errors out. Tells admin the URL
+                   didn't resolve to an image (common when someone pastes
+                   the page URL instead of the direct image URL). -->
+              <div class="film-frame__broken" aria-hidden>
+                <span>image didn't load</span>
+                <span class="film-frame__empty-sub">use a direct image URL · right-click image → copy address</span>
+              </div>
+            </>
           ) : (
             <div class="film-frame__empty">
               <span>no image</span>
@@ -200,6 +214,29 @@ const resolveUrl = (u: string) =>
     color: rgba(255, 255, 255, 0.3);
     letter-spacing: 0.16em;
   }
+
+  /* Hidden by default; revealed when the frame's <img> errors out
+     (see the inline script at the end of this file). Sits over the
+     broken image and explains the most likely cause. */
+  .film-frame__broken {
+    display: none;
+    position: absolute;
+    inset: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 18px;
+    text-align: center;
+    background: linear-gradient(180deg, rgba(8,8,12,0.92), rgba(8,8,12,0.96));
+    color: rgba(229, 115, 115, 0.85);
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+  }
+  .film-frame.is-broken .film-frame__broken { display: flex; }
+  .film-frame.is-broken img { opacity: 0; }
 
   .film-frame__cap {
     position: absolute;
@@ -594,6 +631,24 @@ const resolveUrl = (u: string) =>
     if (!rail) return;
 
     const frames = Array.from(rail.querySelectorAll('.film-frame'));
+
+    // 0. Broken-image detection. Each frame's <img> may resolve to a
+    //    404, an HTML page, or a hotlink-blocked response. Tag the
+    //    frame with `is-broken` so the overlay surfaces explaining
+    //    what's wrong.
+    frames.forEach((f) => {
+      const img = f.querySelector('img[data-frame-img]');
+      if (!img) return;
+      const markBroken = () => f.classList.add('is-broken');
+      img.addEventListener('error', markBroken);
+      // If the image already loaded but ended up zero-byte (some hotlink
+      // blockers return a tiny placeholder), catch that too.
+      img.addEventListener('load', () => {
+        if (img.naturalWidth < 2 || img.naturalHeight < 2) markBroken();
+      });
+      // Edge case: image already loaded by the time JS ran.
+      if (img.complete && img.naturalWidth < 2) markBroken();
+    });
 
     // 1. Wheel-to-horizontal. Vertical-dominant wheel events become horizontal pans.
     rail.addEventListener(
