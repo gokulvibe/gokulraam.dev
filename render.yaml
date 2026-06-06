@@ -17,7 +17,11 @@ services:
     plan: free
     rootDir: backend
     buildCommand: pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
+    # Migrations run BEFORE uvicorn binds to the port. If they fail
+    # (e.g. a broken Alembic revision), the deploy fails clearly in
+    # Render's logs and the existing live instance keeps serving — the
+    # bad code never reaches users.
+    startCommand: python -m app.migrate && uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
     healthCheckPath: /api/health
     # Auto-deploy when main branch updates
     autoDeploy: true

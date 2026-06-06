@@ -6,12 +6,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse
 
 from app.config import UPLOADS_DIR, get_settings
-from app.db import Base, engine
 from app.storage import R2Storage, get_storage
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from app.migrate import run_data_backfills, run_migrations
+# Schema migrations live in alembic/ and run via `python -m app.migrate`
+# (called from Makefile / Render's startCommand BEFORE uvicorn binds).
+# Nothing migration-related runs in the lifespan anymore — keeps server
+# boot focused on application bring-up, not DDL.
 from app.routers import auth, badminton, books, guestbook, logbook, museum, now, og, photos, profile, projects, search, stats, status as status_router, til, uses, work
 from app.scrapers.bwf import run_scrape
 from app.seed import (
@@ -35,9 +37,10 @@ _scheduler: AsyncIOScheduler | None = None
 @asynccontextmanager
 async def lifespan(_: FastAPI):  # noqa: ANN201
     global _scheduler
-    Base.metadata.create_all(bind=engine)
-    if (n := run_migrations()):
-        print(f"[migrate] added {n} columns to existing tables")
+    # Schema is managed by Alembic — run `python -m app.migrate` (or
+    # `make migrate`) before starting uvicorn. We deliberately don't
+    # touch the schema from here. Seeds, scheduler, and other
+    # application bring-up follow.
     if (n := seed_til_from_mdx()):
         print(f"[seed] imported {n} TIL posts from MDX")
     if (n := seed_now_items()):
@@ -60,11 +63,6 @@ async def lifespan(_: FastAPI):  # noqa: ANN201
         print(f"[seed] inserted {n} photo placeholders")
     if (n := seed_logbook()):
         print(f"[seed] inserted {n} logbook entries")
-
-    # Content backfills — run after seeds so seeded rows are eligible.
-    # Each entry only fires when the row still holds its original default.
-    if (n := run_data_backfills()):
-        print(f"[migrate] data-backfilled {n} rows")
 
     # Schedule daily badminton scrape at 06:00 local time. Best-effort —
     # failures don't crash startup; errors land in logs.

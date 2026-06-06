@@ -133,12 +133,39 @@ Notes:
 - Routers grouped by domain (`/api/til`, `/api/now`, `/api/photos`, etc.)
 - File uploads go through `app.storage.get_storage()` so LocalDisk↔R2 is transparent
 
-### Migrations — local dev SQLite
+### Migrations — Alembic
 
-When adding a column: append a tuple to `_COLUMN_ADDS` in `migrate.py`. Backend
-reload picks it up; tables that don't exist yet are skipped (Base.metadata.create_all
-will create with the new column). For destructive schema changes, drop the
-SQLite file (`rm backend/app.db`) and let seeds re-run.
+Schema and data migrations live under `backend/alembic/versions/`. Run them as
+their own step — they don't fire from the FastAPI lifespan anymore.
+
+```sh
+make migrate                          # apply pending migrations
+make migrate-new NAME="add foo col"   # scaffold a new revision (autogenerate)
+```
+
+`app/migrate.py` is the bootstrap wrapper that's safe to run on any state:
+
+| Current DB state | What `make migrate` does |
+|---|---|
+| Fresh (no tables) | runs the baseline upgrade → `Base.metadata.create_all` → every table exists |
+| Populated but no `alembic_version` (legacy) | `alembic stamp head` — records "we're at head" without running any DDL |
+| Alembic-managed (`alembic_version` exists) | `alembic upgrade head` — applies any pending revisions |
+
+**Workflow for adding a column** (or any model change):
+
+1. Edit the model in `app/models.py` (add field, change type, etc.)
+2. `make migrate-new NAME="add foo to bar"` — autogenerates the revision file
+3. Review the file under `backend/alembic/versions/<hash>_add_foo_to_bar.py`
+4. `make migrate` — applies locally
+5. Commit + push — Render runs `python -m app.migrate` before uvicorn
+
+**Workflow for a data backfill** (UPDATE existing rows):
+
+1. `cd backend && .venv/bin/alembic revision -m "backfill foo"` (no autogenerate)
+2. Add `op.execute("UPDATE ... WHERE ...")` to the generated file's `upgrade()`
+3. `make migrate` locally, then commit + push
+
+For destructive local resets: `rm backend/app.db && make migrate` rebuilds clean from models.
 
 ### Mobile
 
