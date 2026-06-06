@@ -1,9 +1,17 @@
-"""Public guestbook.
+"""Guestbook — public write, moderated read.
 
-POST /api/guestbook       — anonymous submission. Honeypot field + IP hash for
-                            light spam protection. No login required.
-GET  /api/guestbook       — list visible entries.
-DELETE /api/guestbook/<id> (admin) — hide an entry (soft-delete via hidden=True).
+POST   /api/guestbook       — anonymous submission. Honeypot field +
+                              30s IP-hash rate limit. No login needed.
+                              New entries land unpinned (= private).
+GET    /api/guestbook       — visible entries.
+                                • visitor → pinned=True AND hidden=False
+                                • admin   → all non-hidden (includes pending)
+PATCH  /api/guestbook/<id>  — admin only; toggle `pinned`.
+DELETE /api/guestbook/<id>  — admin only; soft-hide (hidden=True).
+
+The admin moderation step is what changed: submissions used to be
+public-by-default. Now they're private-by-default until the admin pins
+them. Nothing else about the abuse-prevention path moved.
 """
 
 import hashlib
@@ -14,10 +22,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
-from app.auth import current_admin
+from app.auth import current_admin, optional_admin
 from app.db import get_db
 from app.models import GuestbookEntry
-from app.schemas import GuestbookEntryIn, GuestbookEntryOut
+from app.schemas import GuestbookEntryIn, GuestbookEntryOut, GuestbookEntryUpdate
 
 
 router = APIRouter(prefix="/guestbook", tags=["guestbook"])
@@ -37,15 +45,20 @@ def _ip_hash(request: Request) -> str:
 
 
 @router.get("", response_model=list[GuestbookEntryOut])
-def list_entries(db: Annotated[Session, Depends(get_db)]) -> list[GuestbookEntry]:
-    return list(
-        db.scalars(
-            select(GuestbookEntry)
-            .where(GuestbookEntry.hidden.is_(False))
-            .order_by(desc(GuestbookEntry.created_at))
-            .limit(200)
-        ).all()
+def list_entries(
+    db: Annotated[Session, Depends(get_db)],
+    admin: Annotated[str | None, Depends(optional_admin)],
+) -> list[GuestbookEntry]:
+    q = (
+        select(GuestbookEntry)
+        .where(GuestbookEntry.hidden.is_(False))
+        .order_by(desc(GuestbookEntry.created_at))
+        .limit(200)
     )
+    if admin is None:
+        # Public list is moderation-gated to whatever the admin pinned.
+        q = q.where(GuestbookEntry.pinned.is_(True))
+    return list(db.scalars(q).all())
 
 
 @router.post("", response_model=GuestbookEntryOut, status_code=status.HTTP_201_CREATED)
@@ -64,6 +77,7 @@ def create_entry(
             name=body.name or "anonymous",
             message=body.message,
             ip_hash="",
+            pinned=False,
             hidden=True,
             created_at=datetime.now(tz=timezone.utc),
         )
@@ -89,9 +103,27 @@ def create_entry(
         name=(body.name or "").strip()[:80],
         message=body.message.strip(),
         ip_hash=ip,
+        pinned=False,   # admin reviews + pins before public sees it
         hidden=False,
     )
     db.add(entry)
+    db.commit()
+    db.refresh(entry)
+    return entry
+
+
+@router.patch("/{entry_id}", response_model=GuestbookEntryOut)
+def update_entry(
+    entry_id: int,
+    body: GuestbookEntryUpdate,
+    db: Annotated[Session, Depends(get_db)],
+    _: Annotated[str, Depends(current_admin)],
+) -> GuestbookEntry:
+    entry = db.get(GuestbookEntry, entry_id)
+    if not entry:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "entry not found")
+    if body.pinned is not None:
+        entry.pinned = body.pinned
     db.commit()
     db.refresh(entry)
     return entry

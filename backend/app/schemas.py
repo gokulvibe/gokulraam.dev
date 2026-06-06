@@ -386,7 +386,12 @@ class GuestbookEntryOut(BaseModel):
     id: int
     name: str
     message: str
+    pinned: bool
     created_at: datetime
+
+
+class GuestbookEntryUpdate(BaseModel):
+    pinned: bool | None = None
 
 
 class PhotoOut(BaseModel):

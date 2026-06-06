@@ -2039,6 +2039,33 @@ body { padding-bottom: 4rem; }
   background: rgba(255, 255, 255, 0.015);
   border-radius: 0 0.4rem 0.4rem 0;
 }
+/* Admin-only view of unpinned entries — visually muted so the pinned
+   public-facing ones still read as primary content. */
+.guestbook-entry--pending {
+  border-left-color: rgba(245, 239, 227, 0.18);
+  background: rgba(255, 255, 255, 0.01);
+  opacity: 0.78;
+}
+
+/* Tags on entry header rows */
+.guestbook-pin-tag,
+.guestbook-pending-tag {
+  font-family: theme('fontFamily.mono');
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.guestbook-pin-tag {
+  color: #d5b275;
+  border: 1px solid rgba(213, 178, 117, 0.4);
+  background: rgba(213, 178, 117, 0.06);
+}
+.guestbook-pending-tag {
+  color: rgba(245, 239, 227, 0.55);
+  border: 1px dashed rgba(245, 239, 227, 0.22);
+}
 [data-theme='light'] .guestbook-form { background: var(--c-surface); border-color: var(--c-rule); }
 [data-theme='light'] .guestbook-input { background: var(--c-bg); border-color: var(--c-rule); color: var(--c-text); }
 [data-theme='light'] .guestbook-input:focus { border-color: var(--c-accent); box-shadow: 0 0 0 3px rgba(122, 140, 92, 0.14); }

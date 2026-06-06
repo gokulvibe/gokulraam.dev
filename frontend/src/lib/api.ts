@@ -181,6 +181,7 @@ export interface GuestbookEntry {
   id: number;
   name: string;
   message: string;
+  pinned: boolean;
   created_at: string;
 }
 
@@ -190,6 +191,11 @@ export const guestbook = {
     request<GuestbookEntry>('/api/guestbook', {
       method: 'POST',
       body: JSON.stringify(body),
+    }),
+  setPinned: (id: number, pinned: boolean) =>
+    request<GuestbookEntry>(`/api/guestbook/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ pinned }),
     }),
   remove: (id: number) =>
     request<void>(`/api/guestbook/${id}`, { method: 'DELETE' }),
