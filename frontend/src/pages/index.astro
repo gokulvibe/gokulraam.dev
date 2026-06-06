@@ -220,6 +220,17 @@ const fmtNow = (d: Date) =>
               </div>
             ))}
           </div>
+
+          {/* Contacts on the face — visible without expanding the card.
+              Anchors click through normally (card-expander skips <a>). */}
+          {profile && (
+            <div class="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[11.5px] uppercase tracking-[0.16em]">
+              <a href={`mailto:${profile.email}`} class="text-cream hover:text-ember transition-colors">email →</a>
+              <a href={profile.github_url} class="text-cream hover:text-ember transition-colors" target="_blank" rel="noopener">github →</a>
+              <a href={profile.linkedin_url} class="text-cream hover:text-ember transition-colors" target="_blank" rel="noopener">linkedin →</a>
+              <a href={profile.cv_url} class="text-ember hover:text-cream transition-colors ml-auto">cv ↓</a>
+            </div>
+          )}
         </div>
       </div>
 
