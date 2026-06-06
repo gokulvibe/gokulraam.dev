@@ -2788,7 +2788,10 @@ body { padding-bottom: 4rem; }
   align-items: baseline;
   flex-wrap: wrap;
   gap: 6px 12px;
-  margin: 2.5rem 0 0;
+  /* Pulls in a touch — sits between the folio II divider and the
+     first card row, breathing on both sides but not pushing the
+     grid too far down. */
+  margin: -0.5rem 0 1.25rem;
   padding: 12px 18px;
   border: 1px solid var(--c-rule);
   border-left: 2px solid rgba(213, 178, 117, 0.55);

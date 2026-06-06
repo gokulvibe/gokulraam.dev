@@ -300,6 +300,11 @@ const fmtNow = (d: Date) =>
     </span>
   </div>
 
+  <!-- Quiet "currently solving" status line, sitting at the threshold
+       between the hero and the catalogue. Self-hides when there's no
+       data yet (no username configured or pre-first-sync). -->
+  <LeetcodeMiniCard client:load />
+
   <section class="grid grid-cols-12 gap-3 md:gap-4 folio-only">
 
     <!-- NOW -->
@@ -585,10 +590,6 @@ const fmtNow = (d: Date) =>
     </ExpandableCard>
 
   </section>
-
-  <!-- A quiet "currently solving" line. Hides itself if there's no
-       data yet so it never adds clutter. -->
-  <LeetcodeMiniCard client:load />
 
   <!-- Footer flourish -->
   <section class="mt-16 flex items-center justify-between border-t border-rule pt-6 reveal folio-only" style="animation-delay:0.7s">
