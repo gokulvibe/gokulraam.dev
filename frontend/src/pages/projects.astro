@@ -4,6 +4,7 @@ export const prerender = false;
 import Base from '@/layouts/Base.astro';
 import Card from '@/components/Card.astro';
 import EditableField from '@/components/admin/EditableField';
+import BackendWarming from '@/components/BackendWarming';
 
 const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8000';
 
@@ -30,12 +31,7 @@ try {
     <h1 class="display text-5xl md:text-6xl">Things I've<br /><span class="italic text-ember">shipped.</span></h1>
   </header>
 
-  {!backendOk && (
-    <div class="card border-rose/30 bg-rose/5 mb-8">
-      <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-rose mb-2">// backend offline</p>
-      <p class="text-sm text-parchment">The API at <code class="font-mono">{API_BASE}</code> is unreachable.</p>
-    </div>
-  )}
+  {!backendOk && <BackendWarming client:load />}
 
   <div class="grid gap-5 md:grid-cols-2">
     {projects.map((p) => (

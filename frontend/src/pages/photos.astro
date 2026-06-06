@@ -5,6 +5,7 @@ import Base from '@/layouts/Base.astro';
 import EditableField from '@/components/admin/EditableField';
 import PhotoAdd from '@/components/admin/PhotoAdd';
 import PhotoDelete from '@/components/admin/PhotoDelete';
+import BackendWarming from '@/components/BackendWarming';
 
 const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8000';
 
@@ -48,12 +49,7 @@ const resolveUrl = (u: string) =>
     </p>
   </header>
 
-  {!backendOk && (
-    <div class="card border-rose/30 bg-rose/5 mb-8">
-      <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-rose mb-2">// backend offline</p>
-      <p class="text-sm text-parchment">The API at <code class="font-mono">{API_BASE}</code> is unreachable.</p>
-    </div>
-  )}
+  {!backendOk && <BackendWarming client:load />}
 
   <PhotoAdd client:load />
 

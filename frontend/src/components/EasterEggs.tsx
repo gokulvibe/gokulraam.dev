@@ -53,7 +53,13 @@ const TRIGGERS: Trigger[] = [
   },
 ];
 
-const MAX_WORD = Math.max(...TRIGGERS.map((t) => t.word.length));
+// Meta-words don't live in TRIGGERS (no toast, no effect), but they
+// still need to fit in the keystroke buffer.
+const META_WORDS = ['secrets'];
+const MAX_WORD = Math.max(
+  ...TRIGGERS.map((t) => t.word.length),
+  ...META_WORDS.map((w) => w.length),
+);
 
 function showToast({ glyph, title, link }: ToastSpec) {
   document.querySelectorAll('.egg-toast').forEach((el) => el.remove());
@@ -201,6 +207,14 @@ export default function EasterEggs() {
       if (now - lastAt > TYPE_BUFFER_MS) buffer = '';
       lastAt = now;
       buffer = (buffer + e.key.toLowerCase()).slice(-MAX_WORD);
+
+      // Special meta-trigger: open the secrets panel. Doesn't show a
+      // toast or write a discovery; it's the navigation, not the reward.
+      if (buffer.endsWith('secrets')) {
+        buffer = '';
+        window.dispatchEvent(new CustomEvent('secrets:open'));
+        return;
+      }
 
       for (const trig of TRIGGERS) {
         if (buffer.endsWith(trig.word)) {

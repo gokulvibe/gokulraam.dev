@@ -30,6 +30,7 @@ import '@/styles/globals.css';
 import AdminBar from '@/components/admin/AdminBar';
 import CmdK from '@/components/CmdK';
 import EasterEggs from '@/components/EasterEggs';
+import SecretsPanel from '@/components/SecretsPanel';
 import SoundToggle from '@/components/SoundToggle';
 import ThemeToggle from '@/components/ThemeToggle';
 interface Props {
@@ -246,6 +247,10 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://gokulraa
 
     <!-- Easter eggs — shutter chord + 'knock' keyword. Renders nothing visible. -->
     <EasterEggs client:load />
+
+    <!-- Meta-egg: slide-out drawer listing every easter egg (with hints
+         for ones not yet found). Opens on typing 'secrets'. -->
+    <SecretsPanel client:load />
 
     <!-- Mobile menu open/close logic -->
     <script is:inline>

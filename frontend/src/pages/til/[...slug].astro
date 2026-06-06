@@ -12,6 +12,7 @@ import TilShare from '@/components/TilShare';
 import EditableAttachments from '@/components/admin/EditableAttachments';
 import PostStatusActions from '@/components/admin/PostStatusActions';
 import TilDraftLoader from '@/components/admin/TilDraftLoader';
+import BackendWarming from '@/components/BackendWarming';
 
 const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8000';
 
@@ -79,18 +80,7 @@ const canonicalUrl = new URL(
   description={post?.title ?? 'TIL'}
   ogImage={post ? `${API_BASE}/api/og/til/${post.slug}.png` : undefined}
 >
-  {
-    !backendOk && (
-      <div class="card border-rose/30 bg-rose/5">
-        <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-rose mb-2">
-          // backend offline
-        </p>
-        <p class="text-sm text-parchment">
-          The API at <code class="font-mono">{API_BASE}</code> is unreachable.
-        </p>
-      </div>
-    )
-  }
+  {!backendOk && <BackendWarming client:load />}
 
   {
     post && (

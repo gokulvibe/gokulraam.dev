@@ -2620,6 +2620,256 @@ body { padding-bottom: 4rem; }
 }
 [data-museum] .editable-row button.cancel { color: var(--m-mist); }
 
+/* ─── Backend warming / offline state ─────────────────────
+   Replaces the per-page "backend offline" card with something that
+   knows about Render's cold-start. Auto-retries and reloads when
+   the API comes back; falls through to a hard "unreachable" state
+   after ~45s. */
+
+.warming {
+  position: relative;
+  margin-bottom: 2rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid rgba(213, 178, 117, 0.32);
+  border-left: 2px solid #d5b275;
+  border-radius: 2px;
+  background: rgba(213, 178, 117, 0.04);
+}
+.warming__label {
+  font-family: theme('fontFamily.mono');
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: #d5b275;
+  margin: 0 0 8px 0;
+}
+.warming__body {
+  font-size: 14px;
+  line-height: 1.55;
+  color: theme('colors.parchment');
+  margin: 0;
+}
+.warming__body code {
+  font-family: theme('fontFamily.mono');
+  font-size: 12px;
+  color: theme('colors.cream');
+  background: rgba(255, 255, 255, 0.04);
+  padding: 1px 5px;
+  border-radius: 2px;
+}
+.warming__meter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+.warming__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d5b275;
+  animation: warming-pulse 1.4s ease-in-out infinite;
+}
+@keyframes warming-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+.warming__time {
+  font-family: theme('fontFamily.mono');
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: theme('colors.ghost');
+}
+
+.warming--cold {
+  border-color: rgba(229, 115, 115, 0.35);
+  border-left-color: #e57373;
+  background: rgba(229, 115, 115, 0.04);
+}
+.warming--cold .warming__label { color: #e57373; }
+.warming__retry {
+  margin-top: 14px;
+  background: transparent;
+  border: 1px solid rgba(229, 115, 115, 0.5);
+  color: #e57373;
+  font-family: theme('fontFamily.mono');
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  padding: 8px 16px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+.warming__retry:hover {
+  background: rgba(229, 115, 115, 0.08);
+  color: #fff;
+}
+
+[data-theme='light'] .warming { background: rgba(184, 148, 85, 0.06); }
+[data-theme='light'] .warming__body { color: #1c1a14; }
+[data-theme='light'] .warming__body code { color: #1c1a14; }
+
+/* ─── Secrets panel (visitor-facing meta-egg) ───────────── */
+
+.secrets-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  justify-content: flex-end;
+  animation: secrets-fade 0.22s ease-out;
+}
+@keyframes secrets-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.secrets {
+  width: 100%;
+  max-width: 420px;
+  height: 100%;
+  background: rgba(11, 11, 15, 0.97);
+  border-left: 2px solid #d5b275;
+  padding: 28px 28px 22px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  animation: secrets-slide 0.26s cubic-bezier(0.4, 1, 0.4, 1);
+}
+@keyframes secrets-slide {
+  from { transform: translateX(40px); }
+  to { transform: translateX(0); }
+}
+.secrets__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+}
+.secrets__title {
+  font-family: theme('fontFamily.mono');
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  color: theme('colors.gold');
+  margin: 0 0 6px 0;
+}
+.secrets__count {
+  font-family: theme('fontFamily.mono');
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: theme('colors.ghost');
+  margin: 0;
+}
+.secrets__close {
+  background: transparent;
+  border: none;
+  color: rgba(245, 239, 227, 0.55);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 6px;
+}
+.secrets__close:hover { color: theme('colors.cream'); }
+
+.secrets__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.secrets__item {
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.015);
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+.secrets__item.is-found {
+  border-color: rgba(213, 178, 117, 0.32);
+  background: rgba(213, 178, 117, 0.04);
+}
+.secrets__item.is-locked .secrets__hint {
+  font-family: 'Fraunces', Georgia, serif;
+  font-style: italic;
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: rgba(245, 239, 227, 0.65);
+}
+.secrets__row {
+  display: grid;
+  grid-template-columns: 26px 22px 1fr;
+  gap: 12px;
+  align-items: baseline;
+}
+.secrets__num {
+  font-family: theme('fontFamily.mono');
+  font-size: 10.5px;
+  color: theme('colors.gold');
+  letter-spacing: 0.14em;
+}
+.secrets__mark {
+  font-family: theme('fontFamily.mono');
+  font-size: 14px;
+  line-height: 1;
+}
+.secrets__item.is-found .secrets__mark {
+  color: #8eb586;
+}
+.secrets__item.is-locked .secrets__mark {
+  color: rgba(245, 239, 227, 0.35);
+}
+.secrets__body { min-width: 0; }
+.secrets__found-line {
+  font-family: theme('fontFamily.mono');
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: theme('colors.cream');
+}
+.secrets__detail {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-family: theme('fontFamily.mono');
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+.secrets__reveals { color: theme('colors.ember'); }
+.secrets__when { color: theme('colors.ghost'); }
+.secrets__hint {
+  margin: 0;
+}
+.secrets__foot {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--c-rule);
+  font-family: theme('fontFamily.mono');
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: theme('colors.ghost');
+  text-align: center;
+}
+
+[data-theme='light'] .secrets {
+  background: rgba(252, 248, 240, 0.98);
+  color: #1c1a14;
+}
+[data-theme='light'] .secrets__item.is-locked .secrets__hint {
+  color: rgba(28, 26, 20, 0.7);
+}
+[data-theme='light'] .secrets__found-line { color: #1c1a14; }
+
 /* ─── Admin "eggs" reference modal ────────────────────────── */
 
 .egg-ref-backdrop {

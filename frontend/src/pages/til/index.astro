@@ -6,6 +6,7 @@ import Base from '@/layouts/Base.astro';
 import Card from '@/components/Card.astro';
 import AdminTilSection from '@/components/admin/AdminTilSection';
 import AdminTilRowAction from '@/components/admin/AdminTilRowAction';
+import BackendWarming from '@/components/BackendWarming';
 
 const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8000';
 
@@ -46,19 +47,7 @@ const fmt = (s: string) =>
     </p>
   </header>
 
-  {
-    !backendOk && (
-      <div class="card border-rose/30 bg-rose/5 text-cream mb-8">
-        <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-rose mb-2">
-          // backend offline
-        </p>
-        <p class="text-sm text-parchment">
-          The TIL API at <code class="font-mono">{API_BASE}/api/til</code> is unreachable.
-          Start the backend with <code class="font-mono">make backend</code>.
-        </p>
-      </div>
-    )
-  }
+  {!backendOk && <BackendWarming client:load />}
 
   <!-- Admin-only sections (drafts + quick-create). Invisible to visitors. -->
   <AdminTilSection client:load />
