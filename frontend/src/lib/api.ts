@@ -399,6 +399,32 @@ export const search = {
     request<SearchResponse>(`/api/search?q=${encodeURIComponent(q)}`),
 };
 
+// ─── LeetCode profile cache ─────────────────────────────────
+
+export interface LeetcodeStats {
+  username: string;
+  total_solved: number;
+  easy_solved: number;
+  medium_solved: number;
+  hard_solved: number;
+  streak_days: number;
+  total_active_days: number;
+  ranking: number;
+  last_synced_at: string | null;
+  last_error: string;
+}
+
+export const leetcode = {
+  get: () => request<LeetcodeStats>('/api/leetcode'),
+  setUsername: (username: string) =>
+    request<LeetcodeStats>('/api/leetcode', {
+      method: 'PATCH',
+      body: JSON.stringify({ username }),
+    }),
+  refresh: () =>
+    request<LeetcodeStats>('/api/leetcode/refresh', { method: 'POST' }),
+};
+
 // ─── Live status ─────────────────────────────────────────────
 
 export interface LiveStatus {

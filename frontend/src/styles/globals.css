@@ -2620,6 +2620,165 @@ body { padding-bottom: 4rem; }
 }
 [data-museum] .editable-row button.cancel { color: var(--m-mist); }
 
+/* ─── LeetCode card (subtle, /now only) ──────────────────── */
+
+.leetcode {
+  margin-bottom: 1.75rem;
+  padding: 14px 18px;
+  border: 1px solid var(--c-rule);
+  border-left: 2px solid #c9a96e;
+  border-radius: 2px;
+  background: rgba(201, 169, 110, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.leetcode__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.leetcode__label {
+  font-family: theme('fontFamily.mono');
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: theme('colors.gold');
+}
+.leetcode__handle {
+  font-family: theme('fontFamily.mono');
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: theme('colors.ghost');
+  text-decoration: none;
+}
+.leetcode__handle:hover { color: theme('colors.cream'); }
+
+.leetcode__primary {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 2px;
+}
+.leetcode__streak {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 26px;
+  line-height: 1;
+  color: theme('colors.cream');
+}
+.leetcode__streak-unit {
+  font-family: theme('fontFamily.mono');
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: theme('colors.mist');
+}
+
+.leetcode__breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-family: theme('fontFamily.mono');
+  font-size: 11.5px;
+  color: theme('colors.parchment');
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+.leetcode__breakdown strong {
+  color: theme('colors.cream');
+  font-weight: 500;
+}
+.leetcode__sep { color: theme('colors.ghost'); }
+
+.leetcode__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-family: theme('fontFamily.mono');
+  font-size: 10px;
+  color: theme('colors.ghost');
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  margin-top: 4px;
+}
+.leetcode__link {
+  background: transparent;
+  border: none;
+  color: theme('colors.gold');
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+.leetcode__link:hover { color: theme('colors.cream'); }
+.leetcode__link:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.leetcode__setup {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.leetcode__input {
+  flex: 1;
+  min-width: 160px;
+  background: transparent;
+  border: 1px solid var(--c-rule);
+  color: theme('colors.cream');
+  font-family: theme('fontFamily.mono');
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 2px;
+  outline: none;
+}
+.leetcode__input:focus { border-color: rgba(213, 178, 117, 0.5); }
+.leetcode__btn {
+  background: rgba(213, 178, 117, 0.1);
+  border: 1px solid rgba(213, 178, 117, 0.4);
+  color: theme('colors.gold');
+  font-family: theme('fontFamily.mono');
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  padding: 6px 12px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+.leetcode__btn:hover:not(:disabled) { background: rgba(213, 178, 117, 0.16); }
+.leetcode__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.leetcode__btn--ghost {
+  background: transparent;
+  border-color: var(--c-rule);
+  color: theme('colors.mist');
+}
+
+.leetcode__pending {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-family: theme('fontFamily.mono');
+  font-size: 11px;
+  color: theme('colors.mist');
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+.leetcode__err {
+  font-family: theme('fontFamily.mono');
+  font-size: 10px;
+  color: #e57373;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin: 0;
+}
+
+[data-theme='light'] .leetcode { background: rgba(184, 148, 85, 0.05); }
+[data-theme='light'] .leetcode__streak { color: #1c1a14; }
+[data-theme='light'] .leetcode__breakdown strong { color: #1c1a14; }
+
 /* ─── Backend warming / offline state ─────────────────────
    Replaces the per-page "backend offline" card with something that
    knows about Render's cold-start. Auto-retries and reloads when

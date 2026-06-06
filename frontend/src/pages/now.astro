@@ -6,6 +6,7 @@ import Base from '@/layouts/Base.astro';
 import Card from '@/components/Card.astro';
 import EditableNowItem from '@/components/admin/EditableNowItem';
 import LiveStatus from '@/components/LiveStatus';
+import LeetcodeCard from '@/components/LeetcodeCard';
 import BackendWarming from '@/components/BackendWarming';
 
 const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8000';
@@ -61,6 +62,8 @@ const fmt = (d: Date) =>
   </header>
 
   {!backendOk && <BackendWarming client:load />}
+
+  <LeetcodeCard client:load />
 
   <div class="grid gap-5 md:grid-cols-2">
     {facets.map((item) => (

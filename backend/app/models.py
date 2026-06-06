@@ -404,6 +404,34 @@ class LogbookEntry(Base):
     )
 
 
+class LeetcodeStats(Base):
+    """Singleton row (id=1) holding the latest scraped LeetCode profile
+    data for the configured username. Refreshed daily via the BWF-style
+    scraper pattern (see app.scrapers.leetcode). All fields except
+    `username` are populated from the GraphQL response — `error` carries
+    the last failure if a sync went sideways so the UI can show a tiny
+    diagnostic."""
+    __tablename__ = "leetcode_stats"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    username: Mapped[str] = mapped_column(String(120), default="")
+    total_solved: Mapped[int] = mapped_column(Integer, default=0)
+    easy_solved: Mapped[int] = mapped_column(Integer, default=0)
+    medium_solved: Mapped[int] = mapped_column(Integer, default=0)
+    hard_solved: Mapped[int] = mapped_column(Integer, default=0)
+    streak_days: Mapped[int] = mapped_column(Integer, default=0)
+    total_active_days: Mapped[int] = mapped_column(Integer, default=0)
+    ranking: Mapped[int] = mapped_column(Integer, default=0)
+    last_synced_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_error: Mapped[str] = mapped_column(String(300), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+
 class PageView(Base):
     __tablename__ = "page_views"
 

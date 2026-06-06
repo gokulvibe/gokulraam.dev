@@ -19,6 +19,7 @@ from app.models import (
     BadmintonPlayer,
     BadmintonTournament,
     Book,
+    LeetcodeStats,
     LogbookEntry,
     MuseumExhibit,
     NowItem,
@@ -612,6 +613,18 @@ _LOGBOOK_DEFAULTS: list[tuple[str, str, int]] = [
     ("Found out about Postgres generated columns. How did I never use these?", "win", 44),
     ("Pre-coffee. Already wishing I had two.", "thought", 72),
 ]
+
+
+def seed_leetcode() -> int:
+    """Create the singleton LeetcodeStats row if it doesn't exist. The
+    username starts empty — admin sets it once via PATCH /api/leetcode
+    (or inline on /now), then the daily cron fills in the numbers."""
+    with SessionLocal() as db:
+        if db.get(LeetcodeStats, 1) is not None:
+            return 0
+        db.add(LeetcodeStats(id=1, username=""))
+        db.commit()
+        return 1
 
 
 def seed_logbook() -> int:
