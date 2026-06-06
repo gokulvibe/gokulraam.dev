@@ -1,0 +1,39 @@
+# Keep the image small + fast to build by excluding things the runtime
+# doesn't need.
+
+# Local venv (we rebuild deps inside the image)
+.venv/
+venv/
+
+# Python bytecode + caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local SQLite DB + uploaded files (provided via volume in prod)
+*.db
+*.db-journal
+data/
+
+# Editor / OS noise
+.vscode/
+.idea/
+.DS_Store
+
+# Env files — these get injected at runtime, not baked in
+.env
+.env.*
+!.env.production.example
+
+# Git state — nothing in the image cares
+.git/
+.gitignore
+
+# Tooling that ran on the dev machine, not in the container
+*.egg-info/
+.coverage
+htmlcov/
