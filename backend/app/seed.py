@@ -615,14 +615,18 @@ _LOGBOOK_DEFAULTS: list[tuple[str, str, int]] = [
 ]
 
 
+_LEETCODE_DEFAULT_USERNAME = "gokulraamofficial"
+
+
 def seed_leetcode() -> int:
-    """Create the singleton LeetcodeStats row if it doesn't exist. The
-    username starts empty — admin sets it once via PATCH /api/leetcode
-    (or inline on /now), then the daily cron fills in the numbers."""
+    """Create the singleton LeetcodeStats row if it doesn't exist.
+    Username defaults to Gokul's handle; admin can change later via
+    PATCH /api/leetcode or the inline editor on /now. The daily cron
+    then populates the numbers."""
     with SessionLocal() as db:
         if db.get(LeetcodeStats, 1) is not None:
             return 0
-        db.add(LeetcodeStats(id=1, username=""))
+        db.add(LeetcodeStats(id=1, username=_LEETCODE_DEFAULT_USERNAME))
         db.commit()
         return 1
 
