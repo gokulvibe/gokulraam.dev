@@ -7,6 +7,7 @@ import ExpandableCard from '@/components/ExpandableCard.astro';
 import EditableNowItem from '@/components/admin/EditableNowItem';
 import EditableField from '@/components/admin/EditableField';
 import AmbientPlayer from '@/components/AmbientPlayer';
+import LeetcodeMiniCard from '@/components/LeetcodeMiniCard';
 
 const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8000';
 
@@ -584,6 +585,10 @@ const fmtNow = (d: Date) =>
     </ExpandableCard>
 
   </section>
+
+  <!-- A quiet "currently solving" line. Hides itself if there's no
+       data yet so it never adds clutter. -->
+  <LeetcodeMiniCard client:load />
 
   <!-- Footer flourish -->
   <section class="mt-16 flex items-center justify-between border-t border-rule pt-6 reveal folio-only" style="animation-delay:0.7s">

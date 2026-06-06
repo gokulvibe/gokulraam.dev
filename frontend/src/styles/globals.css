@@ -2779,6 +2779,74 @@ body { padding-bottom: 4rem; }
 [data-theme='light'] .leetcode__streak { color: #1c1a14; }
 [data-theme='light'] .leetcode__breakdown strong { color: #1c1a14; }
 
+/* ─── LeetCode mini (homepage / non-/now placement) ──────── */
+
+/* A single-line subtle status row. Visually quieter than the
+   /now card — it's a passing nod, not a featured stat. */
+.leetcode-mini {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin: 2.5rem 0 0;
+  padding: 12px 18px;
+  border: 1px solid var(--c-rule);
+  border-left: 2px solid rgba(213, 178, 117, 0.55);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.015);
+  color: theme('colors.mist');
+  font-family: theme('fontFamily.mono');
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  text-decoration: none;
+  transition: border-color 0.18s ease, background 0.18s ease;
+  width: 100%;
+}
+.leetcode-mini:hover {
+  border-color: rgba(213, 178, 117, 0.45);
+  background: rgba(213, 178, 117, 0.04);
+}
+.leetcode-mini__label {
+  color: theme('colors.gold');
+  letter-spacing: 0.22em;
+}
+.leetcode-mini__primary {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.leetcode-mini__primary strong {
+  font-family: 'Fraunces', Georgia, serif;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 18px;
+  letter-spacing: 0;
+  color: theme('colors.cream');
+}
+.leetcode-mini__unit { color: theme('colors.mist'); }
+.leetcode-mini__sep { color: theme('colors.ghost'); }
+.leetcode-mini__split {
+  color: theme('colors.ghost');
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+}
+.leetcode-mini__handle {
+  margin-left: auto;
+  color: theme('colors.ghost');
+  font-size: 10px;
+}
+.leetcode-mini:hover .leetcode-mini__handle { color: theme('colors.gold'); }
+
+@media (max-width: 640px) {
+  .leetcode-mini { font-size: 10.5px; gap: 4px 10px; padding: 10px 14px; }
+  .leetcode-mini__primary strong { font-size: 16px; }
+  .leetcode-mini__handle { margin-left: 0; }
+}
+
+[data-theme='light'] .leetcode-mini { background: rgba(0, 0, 0, 0.02); }
+[data-theme='light'] .leetcode-mini__primary strong { color: #1c1a14; }
+
 /* ─── Backend warming / offline state ─────────────────────
    Replaces the per-page "backend offline" card with something that
    knows about Render's cold-start. Auto-retries and reloads when
