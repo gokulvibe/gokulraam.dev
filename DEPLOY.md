@@ -243,6 +243,26 @@ Just `git push origin main`. Both Render and Cloudflare Pages have GitHub integr
 ### Local dev still works the same
 Nothing changed for local development. `make dev` still runs against SQLite + local-disk uploads. The Postgres/R2 envs are only set in production.
 
+### Migrations on prod
+
+Render's `startCommand` runs `python -m app.migrate && uvicorn ...`. That
+means schema migrations apply BEFORE uvicorn binds to its port. Flow:
+
+- Build container, install deps
+- Boot container → `app.migrate` runs → if it fails, deploy fails (no
+  traffic switches to the new instance, old one keeps serving)
+- If migrate succeeds → uvicorn starts → health-check passes → traffic
+  flips to the new instance
+
+For an existing populated DB (the prod Postgres we have today) the first
+deploy on Alembic will see no `alembic_version` table + existing app
+tables → `stamp head` (no DDL run). Subsequent deploys with new
+revisions in `backend/alembic/versions/` will `upgrade head`.
+
+To add a column or table change later: edit `app/models.py`, run
+`make migrate-new NAME="..."`, review the file, commit, push. Render
+applies it on the next deploy.
+
 ### Troubleshooting
 
 **Backend stuck on old code (auto-deploy not triggering)**

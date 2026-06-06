@@ -1,135 +1,88 @@
-"""Tiny schema migrator. Idempotent. Dialect-aware (SQLite + Postgres).
+"""Database migration runner — Alembic-backed.
 
-SQLAlchemy `Base.metadata.create_all()` creates *missing tables* but never
-adds new columns to existing ones. For our hobby-scale workflow we don't
-need Alembic — we just drop occasional `ALTER TABLE ADD COLUMN` entries
-into _COLUMN_ADDS and they run on every startup, silently no-op-ing when
-the column is already present.
+Replaces the previous bespoke ALTER TABLE list. Run this *before*
+uvicorn (as part of deploy / `make migrate`), not from the FastAPI
+lifespan. The server no longer mutates the DB on boot.
 
-Column-lookup uses SQLAlchemy's Inspector (dialect-neutral). DDL fragments
-are written for SQLite and translated for Postgres at emission time.
+Usage:
+  cd backend && .venv/bin/python -m app.migrate
 
-When this file grows past ~10 entries, switch to Alembic.
+What it does, by current DB state:
+
+  • Fresh DB (no app tables, no alembic_version)
+      `alembic upgrade head` runs the baseline migration which calls
+      Base.metadata.create_all + every revision since. Tables created.
+
+  • Existing populated DB without alembic_version (legacy production
+    + pre-Alembic local SQLite — the case that triggered the switch)
+      `alembic stamp head` records the baseline as already applied.
+      The schema is at head; we just teach Alembic that fact. No DDL.
+
+  • Alembic-managed DB (alembic_version exists)
+      `alembic upgrade head` applies any pending revisions. No-op if
+      already up to date.
+
+Idempotent. Safe to run repeatedly.
 """
 
 from __future__ import annotations
 
-from sqlalchemy import inspect, text
+import sys
+from pathlib import Path
+
+from alembic import command
+from alembic.config import Config
+from sqlalchemy import inspect
 
 from app.db import engine
 
 
-# (table_name, column_name, column_sql). The column_sql is written in
-# "SQLite dialect" and translated to other dialects by _translate_ddl().
-_COLUMN_ADDS: list[tuple[str, str, str]] = [
-    # Phase D — badminton scraper
-    ("badminton_tournaments", "start_date", "DATETIME"),
-    ("badminton_tournaments", "end_date", "DATETIME"),
-    ("badminton_tournaments", "source_url", "VARCHAR(400) DEFAULT ''"),
-    # Light theme — casual bio + interests
-    ("profile", "casual_about", "TEXT DEFAULT ''"),
-    ("profile", "casual_interests", "VARCHAR(300) DEFAULT ''"),
-    # Analytics — flag self-views so they don't pollute the stats
-    ("page_views", "is_admin", "BOOLEAN DEFAULT 0"),
-    # /now categorized — group items into building/reading/watching/etc.
-    ("now_items", "kind", "VARCHAR(40) DEFAULT ''"),
-]
+_ALEMBIC_INI = Path(__file__).resolve().parents[1] / "alembic.ini"
 
-
-# Per-dialect DDL substitutions. SQLite types are advisory so we keep
-# the source DDL in SQLite form; Postgres needs proper substitutions.
-_DIALECT_MAP: dict[str, list[tuple[str, str]]] = {
-    "postgresql": [
-        ("DATETIME", "TIMESTAMP"),
-        ("BOOLEAN DEFAULT 0", "BOOLEAN DEFAULT FALSE"),
-        ("BOOLEAN DEFAULT 1", "BOOLEAN DEFAULT TRUE"),
-    ],
-    "sqlite": [],
+# Tables we own. If at least one exists, the DB is "populated" — i.e.
+# the schema was created before Alembic took over. We stamp instead of
+# running the baseline create_all (which would error on duplicates).
+_KNOWN_APP_TABLES = {
+    "til_posts", "profile", "now_items", "uses_items",
+    "badminton_players", "badminton_tournaments",
+    "work_roles", "projects", "museum_exhibits",
+    "photos", "guestbook_entries", "logbook_entries",
 }
 
 
-def _translate_ddl(ddl: str, dialect: str) -> str:
-    for old, new in _DIALECT_MAP.get(dialect, []):
-        ddl = ddl.replace(old, new)
-    return ddl
+def _alembic_cfg() -> Config:
+    cfg = Config(str(_ALEMBIC_INI))
+    cfg.set_main_option("script_location", str(_ALEMBIC_INI.parent / "alembic"))
+    return cfg
 
 
-def _existing_columns(conn, table: str) -> set[str] | None:
-    """Returns the set of existing column names for `table`, or None if the
-    table doesn't exist yet (in which case create_all() will produce it with
-    every column already in place — nothing for us to migrate)."""
-    insp = inspect(conn)
-    if not insp.has_table(table):
-        return None
-    return {col["name"] for col in insp.get_columns(table)}
+def _existing_tables() -> set[str]:
+    return set(inspect(engine).get_table_names())
 
 
-def run_migrations() -> int:
-    """Returns number of columns added this run."""
-    added = 0
-    with engine.begin() as conn:
-        dialect = conn.dialect.name
-        for table, column, ddl in _COLUMN_ADDS:
-            cols = _existing_columns(conn, table)
-            if cols is None:
-                continue  # table not created yet — model defs cover it
-            if column in cols:
-                continue
-            ddl_final = _translate_ddl(ddl, dialect)
-            conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {ddl_final}"))
-            added += 1
-    return added
+def main() -> int:
+    tables = _existing_tables()
+    has_alembic = "alembic_version" in tables
+    has_app_tables = bool(_KNOWN_APP_TABLES & tables)
+    cfg = _alembic_cfg()
+
+    if not has_alembic and has_app_tables:
+        # Legacy populated DB — schema already at head. Don't run the
+        # baseline create_all (it'd hit "table already exists"). Just
+        # record that we're at head.
+        print("[migrate] populated DB without alembic_version · stamping head (no DDL)")
+        command.stamp(cfg, "head")
+        print("[migrate] done")
+        return 0
+
+    # Fresh DB or Alembic-managed DB: upgrade head does the right thing.
+    # On a fresh DB, the baseline migration's upgrade() calls
+    # Base.metadata.create_all to bootstrap every table.
+    print("[migrate] running alembic upgrade head")
+    command.upgrade(cfg, "head")
+    print("[migrate] done")
+    return 0
 
 
-# ─── Data backfills (idempotent UPDATEs) ────────────────────
-#
-# When the seed defaults change after the table is already populated,
-# new defaults don't take effect on existing rows (seeds are
-# insert-if-missing, not upsert). Use this list to push *targeted*
-# updates: a row is only modified when EVERY column in `where` matches
-# its old value exactly — so an entry the user has already edited is
-# never trampled.
-#
-# Schema:
-#   { "table": "uses_items",
-#     "where": {"slug": "keyboard", "name": "— keyboard"},
-#     "set":   {"name": "Keychron K3", "note": "low-profile · mac layout"} }
-#
-# Once a backfill applies it can never re-fire: the `where` clause is
-# the *old* value, which no longer exists in the row after the UPDATE.
-# Safe to leave entries in the list forever.
-
-_DataBackfill = dict[str, "str | dict[str, str]"]
-
-_DATA_BACKFILLS: list[_DataBackfill] = [
-    # entries land here as content drafts are merged.
-]
-
-
-def run_data_backfills() -> int:
-    """Returns number of rows updated this run (across all backfills)."""
-    total = 0
-    with engine.begin() as conn:
-        for bf in _DATA_BACKFILLS:
-            table = bf.get("table")
-            where = bf.get("where") or {}
-            set_ = bf.get("set") or {}
-            if not (isinstance(table, str) and isinstance(where, dict) and isinstance(set_, dict)):
-                continue
-            if not where or not set_:
-                continue
-            # Skip if the table doesn't exist (e.g. on a fresh DB where
-            # create_all hasn't fired yet — shouldn't happen given call
-            # order in main.py, but defensive).
-            if _existing_columns(conn, table) is None:
-                continue
-            where_sql = " AND ".join(f"{c} = :w_{c}" for c in where)
-            set_sql = ", ".join(f"{c} = :s_{c}" for c in set_)
-            params = {**{f"w_{c}": v for c, v in where.items()},
-                      **{f"s_{c}": v for c, v in set_.items()}}
-            result = conn.execute(
-                text(f"UPDATE {table} SET {set_sql} WHERE {where_sql}"),
-                params,
-            )
-            total += result.rowcount or 0
-    return total
+if __name__ == "__main__":
+    sys.exit(main())
