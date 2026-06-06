@@ -2673,6 +2673,13 @@ body { padding-bottom: 4rem; }
   text-transform: uppercase;
   letter-spacing: 0.22em;
   color: theme('colors.gold');
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.leetcode__logo {
+  display: inline-block;
+  flex-shrink: 0;
 }
 .leetcode__handle {
   font-family: theme('fontFamily.mono');
@@ -2840,6 +2847,12 @@ body { padding-bottom: 4rem; }
 .leetcode-mini__label {
   color: theme('colors.gold');
   letter-spacing: 0.22em;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.leetcode-mini__logo {
+  flex-shrink: 0;
 }
 .leetcode-mini__primary {
   display: inline-flex;

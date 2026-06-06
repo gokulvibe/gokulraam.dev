@@ -10,6 +10,7 @@
 
 import { useEffect, useState } from 'react';
 import { leetcode, type LeetcodeStats } from '@/lib/api';
+import LeetcodeLogo from './LeetcodeLogo';
 
 export default function LeetcodeMiniCard() {
   const [stats, setStats] = useState<LeetcodeStats | null>(null);
@@ -36,7 +37,10 @@ export default function LeetcodeMiniCard() {
       rel="noopener"
       title={`Solving on LeetCode · last synced ${stats.last_synced_at ? new Date(stats.last_synced_at).toLocaleDateString() : 'never'}`}
     >
-      <span className="leetcode-mini__label">// solving</span>
+      <span className="leetcode-mini__label">
+        <LeetcodeLogo size={13} className="leetcode-mini__logo" />
+        // solving
+      </span>
       <span className="leetcode-mini__primary">
         <strong>{stats.streak_days}</strong>
         <span className="leetcode-mini__unit">day{stats.streak_days === 1 ? '' : 's'}</span>
@@ -47,7 +51,7 @@ export default function LeetcodeMiniCard() {
         <span className="leetcode-mini__unit">solved</span>
       </span>
       <span className="leetcode-mini__split">
-        {stats.easy_solved}E / {stats.medium_solved}M / {stats.hard_solved}H
+        {stats.easy_solved} easy · {stats.medium_solved} medium · {stats.hard_solved} hard
       </span>
       <span className="leetcode-mini__handle">
         leetcode · {stats.username} ↗

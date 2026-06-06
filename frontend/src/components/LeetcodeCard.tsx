@@ -18,6 +18,7 @@
 import { useEffect, useState } from 'react';
 import { leetcode, ApiError, type LeetcodeStats } from '@/lib/api';
 import { useIsAdmin } from './admin/useIsAdmin';
+import LeetcodeLogo from './LeetcodeLogo';
 
 function timeAgo(iso: string | null): string {
   if (!iso) return 'never';
@@ -89,7 +90,10 @@ export default function LeetcodeCard() {
   return (
     <section className="leetcode">
       <div className="leetcode__head">
-        <span className="leetcode__label">// solving</span>
+        <span className="leetcode__label">
+          <LeetcodeLogo size={14} className="leetcode__logo" />
+          // solving
+        </span>
         {hasName && !editingName && (
           <a
             href={`https://leetcode.com/${stats.username}`}
@@ -147,9 +151,9 @@ export default function LeetcodeCard() {
           <div className="leetcode__breakdown">
             <span><strong>{stats.total_solved}</strong> solved</span>
             <span className="leetcode__sep">·</span>
-            <span>{stats.easy_solved}E</span>
-            <span>{stats.medium_solved}M</span>
-            <span>{stats.hard_solved}H</span>
+            <span><strong>{stats.easy_solved}</strong> easy</span>
+            <span><strong>{stats.medium_solved}</strong> medium</span>
+            <span><strong>{stats.hard_solved}</strong> hard</span>
             {stats.ranking > 0 && (
               <>
                 <span className="leetcode__sep">·</span>
