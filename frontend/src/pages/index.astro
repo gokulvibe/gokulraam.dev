@@ -413,7 +413,7 @@ const fmtNow = (d: Date) =>
       kicker="Three years at Saama Technologies."
       glyph="⌘"
       bar="ember"
-      class="col-span-12 md:col-span-8 reveal reveal-4"
+      class="col-span-12 reveal reveal-4"
     >
       <div slot="face" class="flex h-full min-h-[220px] flex-col">
         <p class="display mt-2 text-[26px] leading-[1.1]">
@@ -451,45 +451,6 @@ const fmtNow = (d: Date) =>
         ))}
         <a href="/work" class="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-ember">
           full chronicle <span>→</span>
-        </a>
-      </div>
-    </ExpandableCard>
-
-    <!-- USES -->
-    <ExpandableCard
-      number="005"
-      title="Uses"
-      kicker="The daily kit."
-      glyph="⚙"
-      bar="gold"
-      class="col-span-12 md:col-span-4 reveal reveal-5"
-    >
-      <div slot="face" class="flex h-full min-h-[220px] flex-col">
-        <p class="display mt-2 text-[20px] leading-[1.15]">
-          Editor, terminal,<br />the apparatus.
-        </p>
-        <ul class="mt-6 space-y-1.5 font-mono text-[12.5px] text-mist">
-          <li>vs code · vim mode</li>
-          <li>zsh · iterm2 · starship</li>
-          <li>python 3.12 · pg 16</li>
-        </ul>
-        <p class="mt-auto font-mono text-[10.5px] uppercase tracking-[0.16em] text-ghost">/uses</p>
-      </div>
-
-      <div slot="detail" class="mt-4 grid gap-4">
-        {[
-          ['editor', 'VS Code · vim bindings · One Dark Pro · JetBrains Mono'],
-          ['shell', 'zsh + oh-my-zsh · iTerm2 · Starship'],
-          ['runtime', 'Python 3.12 · Postgres 16 · Redis 7'],
-          ['testing', 'Pytest · httpx · pytest-asyncio'],
-        ].map(([k, v]) => (
-          <div class="border-l border-rule pl-4">
-            <p class="label mb-1">{k}</p>
-            <p class="font-display text-base">{v}</p>
-          </div>
-        ))}
-        <a href="/uses" class="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-ember">
-          full inventory <span>→</span>
         </a>
       </div>
     </ExpandableCard>

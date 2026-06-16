@@ -288,27 +288,6 @@ export const now = {
     }),
 };
 
-// ─── Uses items ────────────────────────────────────────────────
-
-export interface UsesItem {
-  id: number;
-  category: string;
-  slug: string;
-  name: string;
-  note: string;
-  order: number;
-  updated_at: string;
-}
-
-export const uses = {
-  list: () => request<UsesItem[]>('/api/uses'),
-  update: (id: number, patch: { name?: string; note?: string }) =>
-    request<UsesItem>(`/api/uses/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(patch),
-    }),
-};
-
 // ─── Badminton ─────────────────────────────────────────────────
 
 export interface BadmintonPlayer {

@@ -14,7 +14,7 @@ from apscheduler.triggers.cron import CronTrigger
 # (called from Makefile / Render's startCommand BEFORE uvicorn binds).
 # Nothing migration-related runs in the lifespan anymore — keeps server
 # boot focused on application bring-up, not DDL.
-from app.routers import auth, badminton, books, guestbook, leetcode, logbook, museum, now, og, photos, profile, projects, search, stats, status as status_router, til, uses, work
+from app.routers import auth, badminton, books, guestbook, leetcode, logbook, museum, now, og, photos, profile, projects, search, stats, status as status_router, til, work
 from app.scrapers.bwf import run_scrape
 from app.scrapers.leetcode import run_scrape as run_leetcode_scrape
 from app.seed import (
@@ -28,7 +28,6 @@ from app.seed import (
     seed_profile,
     seed_projects,
     seed_til_from_mdx,
-    seed_uses_items,
     seed_work,
 )
 
@@ -47,8 +46,6 @@ async def lifespan(_: FastAPI):  # noqa: ANN201
         print(f"[seed] imported {n} TIL posts from MDX")
     if (n := seed_now_items()):
         print(f"[seed] inserted {n} now items")
-    if (n := seed_uses_items()):
-        print(f"[seed] inserted {n} uses items")
     if (n := seed_badminton()):
         print(f"[seed] inserted {n} badminton rows")
     if (n := seed_work()):
@@ -136,7 +133,6 @@ def serve_upload(path: str):
 app.include_router(auth.router, prefix="/api")
 app.include_router(til.router, prefix="/api")
 app.include_router(now.router, prefix="/api")
-app.include_router(uses.router, prefix="/api")
 app.include_router(badminton.router, prefix="/api")
 app.include_router(work.router, prefix="/api")
 app.include_router(projects.router, prefix="/api")

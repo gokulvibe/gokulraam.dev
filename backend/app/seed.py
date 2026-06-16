@@ -29,7 +29,6 @@ from app.models import (
     Project,
     SpecialtyItem,
     TilPost,
-    UsesItem,
     WorkAward,
     WorkCertification,
     WorkEducation,
@@ -92,7 +91,7 @@ _NOW_DEFAULTS: list[tuple[str, str, str, int]] = [
     ("at-work",   "at work",   "csv → postgres ingestion. threading + lru_cache. 12× faster.", 2),
     ("reading",   "reading",   "Designing Data-Intensive Applications — Kleppmann.", 3),
     ("watching",  "watching",  "BWF Tour. Lakshya, Shi Yu Qi, Lee Zii Jia, Satwik–Chirag.", 4),
-    ("listening", "listening", "lo-fi loops + ambient. whatever ships code.", 5),
+    ("listening", "listening", "pop on repeat. one direction · taylor · weeknd. while shipping code.", 5),
     ("learning",  "learning",  "distributed systems fundamentals. async FastAPI patterns.", 6),
     ("playing",   "playing",   "badminton. working on the backhand. it remains unreliable.", 7),
     ("following", "following", "@hnasr · @b0rk · swyx · BWF livestream feeds.", 8),
@@ -112,62 +111,6 @@ def seed_now_items() -> int:
         if changed:
             db.commit()
     return changed
-
-
-# (category, slug, name, note). Order is implied by list position; we'll
-# stamp `order` accordingly when inserting.
-_USES_DEFAULTS: list[tuple[str, str, str, str]] = [
-    # code
-    ("code", "vscode",          "VS Code",            "editor · vim bindings"),
-    ("code", "one-dark-pro",    "One Dark Pro",       "theme"),
-    ("code", "jetbrains-mono",  "JetBrains Mono",     "editor font"),
-    ("code", "iterm2",          "iTerm2",             "terminal"),
-    ("code", "zsh",             "zsh + oh-my-zsh",    "shell"),
-    ("code", "starship",        "Starship",           "prompt"),
-    # runtime
-    ("runtime", "python",       "Python 3.12",        "primary language"),
-    ("runtime", "postgres",     "PostgreSQL 16",      "database of choice"),
-    ("runtime", "redis",        "Redis 7",            "cache · queues"),
-    ("runtime", "fastapi",      "FastAPI",            "modern python apis"),
-    ("runtime", "pytest",       "Pytest",             "unit + integration"),
-    ("runtime", "pydantic",     "Pydantic v2",        "data validation"),
-    # hardware
-    ("hardware", "laptop",      "MacBook",            "daily driver · macOS"),
-    ("hardware", "keyboard",    "— keyboard",         "fill in your real one"),
-    ("hardware", "monitor",     "— monitor",          "fill in"),
-    ("hardware", "mouse",       "— mouse",            "fill in"),
-    # sound
-    ("sound", "headphones",     "— headphones",       "fill in"),
-    ("sound", "speakers",       "— speakers",         "fill in"),
-    ("sound", "playlist",       "— playlist",         "lo-fi · ambient · whatever ships code"),
-    # court
-    ("court", "racquet",        "— racquet",          "fill in (e.g. Yonex Astrox 99)"),
-    ("court", "shoes",          "— shoes",            "fill in (e.g. Yonex Power Cushion)"),
-    ("court", "shuttles",       "— shuttles",         "fill in (e.g. Yonex Mavis 350)"),
-    ("court", "bag",            "— bag",              "fill in"),
-    # fitness
-    ("fitness", "shaker",       "Protein shaker",     "shake. drink. recover."),
-    ("fitness", "whey",         "Whey protein",       "post-session staple"),
-    ("fitness", "dumbbells",    "Dumbbells",          "home strength · upper-body day"),
-    ("fitness", "bands",        "— resistance bands", "fill in if you use any"),
-    ("fitness", "mat",          "— mat",              "fill in"),
-    # daily
-    ("daily", "watch",          "— watch",            "fill in"),
-    ("daily", "wallet",         "— wallet",           "fill in"),
-    ("daily", "notebook",       "— notebook",         "fill in (e.g. Moleskine)"),
-    ("daily", "coffee",         "Coffee",             "before code · before court"),
-]
-
-
-def seed_uses_items() -> int:
-    with SessionLocal() as db:
-        existing = db.scalar(select(UsesItem.id).limit(1))
-        if existing is not None:
-            return 0
-        for order, (category, slug, name, note) in enumerate(_USES_DEFAULTS):
-            db.add(UsesItem(category=category, slug=slug, name=name, note=note, order=order))
-        db.commit()
-        return len(_USES_DEFAULTS)
 
 
 _BADMINTON_PLAYERS: list[tuple[str, str, str, str, str, str]] = [
@@ -384,11 +327,13 @@ _PROFILE = {
     "skills_csv": "Python,FastAPI,Flask,Django,PostgreSQL,Redis,Celery,Pydantic,Pytest,SQLAlchemy,PySpark,Kafka",
     # Plain-English bio for the "Daylight" light theme (non-dev visitors)
     "casual_about": (
-        "I work as a software engineer at Saama in Coimbatore, where we build "
-        "tools for clinical research. Outside work, you'll usually find me on a "
-        "badminton court, in the gym, or with a book."
+        "I work as a software engineer at Saama in Coimbatore, building tools for "
+        "clinical research. Wired ADHD-style — short loops, music on, ten tabs "
+        "open, coffee never too far away. Outside work I'm on a badminton court "
+        "most weekends, in the gym on weekdays, and friendly to a fault if you "
+        "say hi."
     ),
-    "casual_interests": "Badminton, Fitness, Reading, Music",
+    "casual_interests": "Badminton, Lifting, Pop music, Marvel",
 }
 
 _PROFILE_STATS: list[tuple[str, str, str, str]] = [
@@ -481,9 +426,10 @@ _MUSEUM_DEFAULTS: list[tuple[str, str, str, str, str, str, str]] = [
         "Kumaraguru, four years.",
         "college, friends, the first time I wrote anything that worked.",
         (
-            "Replace this with what college was like — late nights, the first big project, the "
-            "friends you kept, the ones you lost. The moment code clicked. NaviGuide was here.\n\n"
-            "Photos from that time go a long way."
+            "Kumaraguru, four years. NaviGuide was the first project that taught me the "
+            "right abstraction makes the next ten features cheap. Late nights in the lab, "
+            "Dhoni on every dorm TV when India was playing. The moment code clicked: when "
+            "I deleted ten lines and the same thing kept working."
         ),
         "",
         "",
@@ -494,10 +440,10 @@ _MUSEUM_DEFAULTS: list[tuple[str, str, str, str, str, str, str]] = [
         "Badminton, every week without fail.",
         "the thing I look forward to most.",
         (
-            "Replace this with your court story — when you started, the players you watch, the time "
-            "you actually beat someone better than you, the time you didn't. The backhand you've been "
-            "chasing for two years.\n\n"
-            "Action shot would land beautifully here."
+            "Saturdays and Sundays without fail — gym shorts, racquet sleeve, court 3 if "
+            "I'm lucky. Lakshya's footwork, Lee Zii Jia's smash, Shi Yu Qi's calm. The "
+            "Apacs Z-Ziggler Reborn strung tight, frame heavy through the shot. The "
+            "backhand drop is still a work in progress two years in."
         ),
         "",
         "",
@@ -508,9 +454,13 @@ _MUSEUM_DEFAULTS: list[tuple[str, str, str, str, str, str, str]] = [
         "What's making me tick right now.",
         "current chapter.",
         (
-            "Replace this with whatever's currently lighting you up — a project, a book, a person, "
-            "a question you can't put down. The 'now', but more honest than the public /now page.\n\n"
-            "This room can change as often as you like."
+            "Two ear-buds in, pop on rotation — One Direction and Taylor on heavy days, "
+            "Weeknd when the algorithm gets melancholic. The frother whines in the "
+            "kitchen — sometimes a coffee, sometimes a whey shake — and either way "
+            "it ends up lukewarm beside the keyboard. The current obsession is making "
+            "backend APIs that read like they had only one author. SOLID isn't a "
+            "religion but it's an aesthetic. Caches, queues, query plans. Lifting on "
+            "weekdays — almost two years in, still chasing the build."
         ),
         "",
         "",
