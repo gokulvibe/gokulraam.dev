@@ -181,6 +181,7 @@ export interface GuestbookEntry {
   id: number;
   name: string;
   message: string;
+  pinned: boolean;
   created_at: string;
 }
 
@@ -190,6 +191,11 @@ export const guestbook = {
     request<GuestbookEntry>('/api/guestbook', {
       method: 'POST',
       body: JSON.stringify(body),
+    }),
+  setPinned: (id: number, pinned: boolean) =>
+    request<GuestbookEntry>(`/api/guestbook/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ pinned }),
     }),
   remove: (id: number) =>
     request<void>(`/api/guestbook/${id}`, { method: 'DELETE' }),
@@ -279,27 +285,6 @@ export const now = {
     request<NowItem>(`/api/now/${slug}`, {
       method: 'PATCH',
       body: JSON.stringify({ value }),
-    }),
-};
-
-// ─── Uses items ────────────────────────────────────────────────
-
-export interface UsesItem {
-  id: number;
-  category: string;
-  slug: string;
-  name: string;
-  note: string;
-  order: number;
-  updated_at: string;
-}
-
-export const uses = {
-  list: () => request<UsesItem[]>('/api/uses'),
-  update: (id: number, patch: { name?: string; note?: string }) =>
-    request<UsesItem>(`/api/uses/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(patch),
     }),
 };
 
@@ -397,6 +382,32 @@ export interface SearchResponse {
 export const search = {
   query: (q: string) =>
     request<SearchResponse>(`/api/search?q=${encodeURIComponent(q)}`),
+};
+
+// ─── LeetCode profile cache ─────────────────────────────────
+
+export interface LeetcodeStats {
+  username: string;
+  total_solved: number;
+  easy_solved: number;
+  medium_solved: number;
+  hard_solved: number;
+  streak_days: number;
+  total_active_days: number;
+  ranking: number;
+  last_synced_at: string | null;
+  last_error: string;
+}
+
+export const leetcode = {
+  get: () => request<LeetcodeStats>('/api/leetcode'),
+  setUsername: (username: string) =>
+    request<LeetcodeStats>('/api/leetcode', {
+      method: 'PATCH',
+      body: JSON.stringify({ username }),
+    }),
+  refresh: () =>
+    request<LeetcodeStats>('/api/leetcode/refresh', { method: 'POST' }),
 };
 
 // ─── Live status ─────────────────────────────────────────────

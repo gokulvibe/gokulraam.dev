@@ -1,6 +1,13 @@
 /**
  * Guestbook — submission form + entry list, both client-rendered.
  *
+ * Visibility:
+ *   - Visitors see only `pinned` entries — what the admin has approved.
+ *   - Admin (logged in) sees all non-hidden entries (pinned + pending),
+ *     plus a pin/unpin toggle on each.
+ *   - New submissions land unpinned; the form's success message
+ *     reflects that the note is awaiting review.
+ *
  * Spam protection:
  *   - Honeypot field 'website' (visually hidden via CSS, real users never see
  *     or fill it; bots tend to fill every input).
@@ -50,7 +57,12 @@ export default function Guestbook() {
       // If honeypot was filled the server returns a fake success without
       // persisting. The id will be 0 in that case — don't prepend to the
       // visible list, but still pretend it worked.
-      if (newEntry.id > 0) {
+      //
+      // Otherwise: the new entry is unpinned (pending review). Only
+      // prepend to the visible list if the viewer is admin (admin sees
+      // pending); regular visitors won't see their own note appear until
+      // admin pins it. The success message tells them so.
+      if (newEntry.id > 0 && isAdmin) {
         setEntries((prev) => (prev ? [newEntry, ...prev] : [newEntry]));
       }
       setStatus('sent');
@@ -74,6 +86,17 @@ export default function Guestbook() {
       setEntries((prev) => (prev ?? []).filter((e) => e.id !== entry.id));
     } catch {
       alert('Could not hide entry.');
+    }
+  }
+
+  async function togglePin(entry: GuestbookEntry) {
+    try {
+      const updated = await guestbook.setPinned(entry.id, !entry.pinned);
+      setEntries((prev) =>
+        (prev ?? []).map((e) => (e.id === updated.id ? updated : e)),
+      );
+    } catch {
+      alert('Could not update pin state.');
     }
   }
 
@@ -131,7 +154,7 @@ export default function Guestbook() {
           </button>
           {status === 'sent' && (
             <span className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-mist">
-              thank you — your note is below
+              thank you — your note is saved, awaiting review before it appears here
             </span>
           )}
           {status === 'error' && (
@@ -144,34 +167,67 @@ export default function Guestbook() {
 
       {/* Entries */}
       <div>
-        <p className="label mb-4">// notes left for me</p>
+        <div className="flex items-baseline justify-between gap-3 mb-4">
+          <p className="label">// notes left for me</p>
+          {isAdmin && entries && entries.length > 0 && (
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-ghost">
+              {entries.filter((e) => e.pinned).length} pinned · {entries.filter((e) => !e.pinned).length} pending
+            </p>
+          )}
+        </div>
+
         {entries === null && (
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-mist">loading…</p>
         )}
         {entries !== null && entries.length === 0 && (
-          <p className="text-mist italic">no notes yet — be the first.</p>
+          <p className="text-mist italic">
+            {isAdmin
+              ? 'no notes yet.'
+              : 'no notes pinned yet — submit one above and it may show here after review.'}
+          </p>
         )}
         {entries !== null && entries.length > 0 && (
           <ul className="space-y-5">
             {entries.map((e) => (
-              <li key={e.id} className="guestbook-entry">
+              <li
+                key={e.id}
+                className={`guestbook-entry ${!e.pinned ? 'guestbook-entry--pending' : ''}`}
+              >
                 <div className="flex items-baseline justify-between gap-3 mb-2">
-                  <span className="font-display text-lg text-cream">
+                  <span className="font-display text-lg text-cream flex items-baseline gap-2">
                     {e.name?.trim() || <em className="text-mist">anonymous</em>}
+                    {isAdmin && !e.pinned && (
+                      <span className="guestbook-pending-tag">pending</span>
+                    )}
+                    {e.pinned && (
+                      <span className="guestbook-pin-tag" title="Visible to the public">
+                        ⚲ pinned
+                      </span>
+                    )}
                   </span>
                   <div className="flex items-center gap-3">
                     <span className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ghost">
                       {timeAgo(e.created_at)}
                     </span>
                     {isAdmin && (
-                      <button
-                        type="button"
-                        onClick={() => remove(e)}
-                        className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-rose hover:opacity-80"
-                        title="Hide this note"
-                      >
-                        hide
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => togglePin(e)}
+                          className={`font-mono text-[9.5px] uppercase tracking-[0.18em] hover:opacity-80 ${e.pinned ? 'text-ghost' : 'text-gold'}`}
+                          title={e.pinned ? 'Unpin from public list' : 'Pin to public list'}
+                        >
+                          {e.pinned ? 'unpin' : 'pin'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => remove(e)}
+                          className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-rose hover:opacity-80"
+                          title="Hide this note"
+                        >
+                          hide
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>

@@ -7,6 +7,7 @@ import ExpandableCard from '@/components/ExpandableCard.astro';
 import EditableNowItem from '@/components/admin/EditableNowItem';
 import EditableField from '@/components/admin/EditableField';
 import AmbientPlayer from '@/components/AmbientPlayer';
+import LeetcodeMiniCard from '@/components/LeetcodeMiniCard';
 
 const API_BASE = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8000';
 
@@ -219,6 +220,17 @@ const fmtNow = (d: Date) =>
               </div>
             ))}
           </div>
+
+          {/* Contacts on the face — visible without expanding the card.
+              Anchors click through normally (card-expander skips <a>). */}
+          {profile && (
+            <div class="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[11.5px] uppercase tracking-[0.16em]">
+              <a href={`mailto:${profile.email}`} class="text-cream hover:text-ember transition-colors">email →</a>
+              <a href={profile.github_url} class="text-cream hover:text-ember transition-colors" target="_blank" rel="noopener">github →</a>
+              <a href={profile.linkedin_url} class="text-cream hover:text-ember transition-colors" target="_blank" rel="noopener">linkedin →</a>
+              <a href={profile.cv_url} class="text-ember hover:text-cream transition-colors ml-auto">cv ↓</a>
+            </div>
+          )}
         </div>
       </div>
 
@@ -298,6 +310,11 @@ const fmtNow = (d: Date) =>
       <span class="ornament">⁂</span>
     </span>
   </div>
+
+  <!-- Quiet "currently solving" status line, sitting at the threshold
+       between the hero and the catalogue. Self-hides when there's no
+       data yet (no username configured or pre-first-sync). -->
+  <LeetcodeMiniCard client:load />
 
   <section class="grid grid-cols-12 gap-3 md:gap-4 folio-only">
 
@@ -396,7 +413,7 @@ const fmtNow = (d: Date) =>
       kicker="Three years at Saama Technologies."
       glyph="⌘"
       bar="ember"
-      class="col-span-12 md:col-span-8 reveal reveal-4"
+      class="col-span-12 reveal reveal-4"
     >
       <div slot="face" class="flex h-full min-h-[220px] flex-col">
         <p class="display mt-2 text-[26px] leading-[1.1]">
@@ -434,45 +451,6 @@ const fmtNow = (d: Date) =>
         ))}
         <a href="/work" class="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-ember">
           full chronicle <span>→</span>
-        </a>
-      </div>
-    </ExpandableCard>
-
-    <!-- USES -->
-    <ExpandableCard
-      number="005"
-      title="Uses"
-      kicker="The daily kit."
-      glyph="⚙"
-      bar="gold"
-      class="col-span-12 md:col-span-4 reveal reveal-5"
-    >
-      <div slot="face" class="flex h-full min-h-[220px] flex-col">
-        <p class="display mt-2 text-[20px] leading-[1.15]">
-          Editor, terminal,<br />the apparatus.
-        </p>
-        <ul class="mt-6 space-y-1.5 font-mono text-[12.5px] text-mist">
-          <li>vs code · vim mode</li>
-          <li>zsh · iterm2 · starship</li>
-          <li>python 3.12 · pg 16</li>
-        </ul>
-        <p class="mt-auto font-mono text-[10.5px] uppercase tracking-[0.16em] text-ghost">/uses</p>
-      </div>
-
-      <div slot="detail" class="mt-4 grid gap-4">
-        {[
-          ['editor', 'VS Code · vim bindings · One Dark Pro · JetBrains Mono'],
-          ['shell', 'zsh + oh-my-zsh · iTerm2 · Starship'],
-          ['runtime', 'Python 3.12 · Postgres 16 · Redis 7'],
-          ['testing', 'Pytest · httpx · pytest-asyncio'],
-        ].map(([k, v]) => (
-          <div class="border-l border-rule pl-4">
-            <p class="label mb-1">{k}</p>
-            <p class="font-display text-base">{v}</p>
-          </div>
-        ))}
-        <a href="/uses" class="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-ember">
-          full inventory <span>→</span>
         </a>
       </div>
     </ExpandableCard>

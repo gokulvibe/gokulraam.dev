@@ -386,7 +386,12 @@ class GuestbookEntryOut(BaseModel):
     id: int
     name: str
     message: str
+    pinned: bool
     created_at: datetime
+
+
+class GuestbookEntryUpdate(BaseModel):
+    pinned: bool | None = None
 
 
 class PhotoOut(BaseModel):
@@ -463,3 +468,25 @@ class LogbookEntryCreate(BaseModel):
 class LogbookEntryUpdate(BaseModel):
     body: str | None = Field(default=None, min_length=1, max_length=500)
     tag: str | None = Field(default=None, max_length=40)
+
+
+# ─── LeetCode ────────────────────────────────────────────────
+
+
+class LeetcodeStatsOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    username: str
+    total_solved: int
+    easy_solved: int
+    medium_solved: int
+    hard_solved: int
+    streak_days: int
+    total_active_days: int
+    ranking: int
+    last_synced_at: datetime | None
+    last_error: str
+
+
+class LeetcodeStatsUpdate(BaseModel):
+    username: str | None = Field(default=None, max_length=120)

@@ -375,9 +375,11 @@ class Book(Base):
 
 
 class GuestbookEntry(Base):
-    """Anonymous (or signed) note left by a visitor. No auth required to write,
-    but anything with a honeypot value gets dropped at the API. Admin can
-    delete entries; otherwise everything is visible."""
+    """Anonymous (or signed) note left by a visitor. Submissions are public
+    write (honeypot + IP-hash rate-limit guard the abuse path) but they're
+    NOT public-readable by default — admin pins which ones go public.
+    Unpinned entries are still visible to admin so nothing is lost; the
+    public list filter is `pinned=True AND hidden=False`."""
     __tablename__ = "guestbook_entries"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -386,6 +388,9 @@ class GuestbookEntry(Base):
     # Lightweight rate-limit fingerprint — we only store a hash of the IP so we
     # can collapse rapid duplicate posts, never the raw IP itself.
     ip_hash: Mapped[str] = mapped_column(String(64), default="")
+    # Admin moderation: pinned=True surfaces the entry to the public list.
+    # Default False so new submissions stay private until reviewed.
+    pinned: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     hidden: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
 
@@ -401,6 +406,34 @@ class LogbookEntry(Base):
     hidden: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, index=True
+    )
+
+
+class LeetcodeStats(Base):
+    """Singleton row (id=1) holding the latest scraped LeetCode profile
+    data for the configured username. Refreshed daily via the BWF-style
+    scraper pattern (see app.scrapers.leetcode). All fields except
+    `username` are populated from the GraphQL response — `error` carries
+    the last failure if a sync went sideways so the UI can show a tiny
+    diagnostic."""
+    __tablename__ = "leetcode_stats"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    username: Mapped[str] = mapped_column(String(120), default="")
+    total_solved: Mapped[int] = mapped_column(Integer, default=0)
+    easy_solved: Mapped[int] = mapped_column(Integer, default=0)
+    medium_solved: Mapped[int] = mapped_column(Integer, default=0)
+    hard_solved: Mapped[int] = mapped_column(Integer, default=0)
+    streak_days: Mapped[int] = mapped_column(Integer, default=0)
+    total_active_days: Mapped[int] = mapped_column(Integer, default=0)
+    ranking: Mapped[int] = mapped_column(Integer, default=0)
+    last_synced_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_error: Mapped[str] = mapped_column(String(300), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
     )
 
 
