@@ -76,7 +76,7 @@ Every editable field is a React island:
 
 Generic component: `EditableField` with `format: text | longtext | bullets | chips`
 and `adminOnly?: boolean`. Specialized variants for one-off shapes: `EditableTitle`,
-`EditableTags`, `EditableBody`, `EditableNowItem`, `EditableUsesField`.
+`EditableTags`, `EditableBody`, `EditableNowItem`.
 
 **Important**: hooks BEFORE early returns. `useIsAdmin` and all `useState` must
 run before `if (...) return null`. The `adminOnly` prop sits below all hooks.
@@ -188,14 +188,11 @@ wraps to its own line below 540px), photo-add form (split row collapses below 54
 
 ## Known issues (snapshot)
 
-- ⚠ **Render auto-deploy is stuck.** The backend on production has been on
-  an old commit for ~10 pushes. `/admin/stats`, `/photos` add/upload, `/logbook`
-  endpoints all 404 in prod. Frontend has been updating fine on Pages.
-  Open Render dashboard → `gokulraam-backend` → Events tab → look for failed
-  builds or paused auto-deploy. Most likely a build failure that auto-paused
-  the integration.
 - 🟡 Uploaded photos vanish on Render redeploy (ephemeral disk). Workaround:
   paste URLs. Fix: add a card → R2 env vars → storage abstraction switches.
+- 🟡 `uses_items` table is inert dead schema since `/uses` was removed
+  (2026-06-07). No public route, no router, no seed. Safe to drop later via
+  Alembic if cleanup desired; rolling back is cheaper than re-running DDL.
 
 ## Common pitfalls already encountered
 

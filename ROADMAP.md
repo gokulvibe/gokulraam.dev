@@ -55,8 +55,8 @@
 - ✅ Atmosphere layers (aurora, grain, grid veil)
 - ✅ Per-card accent stripe + giant watermark + numerology stamp
 - ✅ 3D mouse tilt + cursor-following foil
-- ✅ Homepage cards: hero (001), Now (002), TIL (003), Work (004), Uses (005), Projects (006), Badminton (007)
-- ✅ Pages: `/work`, `/projects`, `/til`, `/til/<slug>`, `/now`, `/badminton`, `/uses`, `/resume`, `/resume.pdf`
+- ✅ Homepage cards: hero (001), Now (002), TIL (003), Work (004), Projects (006), Badminton (007). (Card 005 Uses removed 2026-06-07.)
+- ✅ Pages: `/work`, `/projects`, `/til`, `/til/<slug>`, `/now`, `/badminton`, `/resume`, `/resume.pdf`
 
 ## Phase 2 — Admin CMS ✅
 
@@ -67,13 +67,12 @@
 - ✅ `useIsAdmin()` hook with in-memory cache
 - ✅ `<AdminBar>` floating pill at bottom-right (admin-only)
 - ✅ `<EditableField>` (generic, formats: text / longtext / bullets / chips / adminOnly)
-- ✅ `<EditableNowItem>`, `<EditableTitle>`, `<EditableTags>`, `<EditableBody>`, `<EditableAttachments>`, `<EditableUsesField>` — all following the same convention
+- ✅ `<EditableNowItem>`, `<EditableTitle>`, `<EditableTags>`, `<EditableBody>`, `<EditableAttachments>` — all following the same convention
 - ✅ TipTap WYSIWYG editor with markdown round-trip, image/link/code-block extensions
 - ✅ ⌘S to save, autosave to localStorage, navigate-confirm with unsaved changes
 - ✅ Every editable section back-fills:
   - TIL post: title / tags / body / attachments / draft toggle / delete
   - /now: 9 facets (building, at-work, reading, watching, listening, learning, playing, following, headline)
-  - /uses: 32 items across 7 categories (code, runtime, hardware, sound, court, fitness, daily)
   - /badminton: 4 players + 4 tournaments + admin scrape trigger
   - /work: roles, awards, certs, education (all CRUD)
   - /projects: full project list
@@ -204,7 +203,7 @@ future "secrets" panel that lists found eggs + hints undiscovered ones.
 
 ## Backlog (small, doable any time)
 
-- ⏳ Real content backfill — fill `—` placeholders in `/uses`, write actual TIL posts, populate museum rooms, replace seeded sample photos with personal ones
+- ⏳ Real content backfill — first pass shipped 2026-06-07 (now · profile · 3 museum rooms); still pending: actual TIL posts, replace seeded sample photos with personal ones, fill remaining museum rooms (entrance, origins, closing)
 - ⏳ Site changelog page (auto from git or hand-curated) — defer until there's an audience to read it
 - ⏳ "Secrets found" panel triggered by Konami code — reveals discovered easter eggs + hints for undiscovered ones (localStorage ledger already in place)
 - ⏳ Mobile pass for `/admin/stats` dense tables
@@ -264,3 +263,9 @@ future "secrets" panel that lists found eggs + hints undiscovered ones.
 | 2026-06-03 | Sound on/off toggle (♪) next to the theme toggle. Persists to localStorage, mirrored to `<html data-sound>`. EasterEggs gates knock audio + haptic; visual page-shake always plays. |
 | 2026-06-03 | Migrator gained a data-backfill scaffold (idempotent guarded UPDATEs); photos page surfaces a clear "image didn't load" overlay for non-image URLs; print stylesheet hides chrome and unfolds anchor URLs inline; admin bar gets a "🥚 eggs" reference modal. |
 | 2026-06-06 | Switched to Alembic. Migrations now run as their own step (`make migrate` / Render's startCommand) — no longer fire from the FastAPI lifespan. The custom `_COLUMN_ADDS` list is retired; baseline migration calls `Base.metadata.create_all`, future changes ship as named revisions in `backend/alembic/versions/`. `app/migrate.py` is the bootstrap wrapper that handles fresh / legacy-populated / alembic-managed DBs uniformly. |
+| 2026-06-06 | LeetCode integration: public-GraphQL scraper (`backend/app/scrapers/leetcode.py`), singleton `LeetcodeStats` row, daily 06:30 cron, `/now`-only full card (`LeetcodeCard`) + tiny mini-card just below the "folio II" divider on home (`LeetcodeMiniCard`). Difficulty pills use full words and a brand-orange SVG mark. Default username seeded as `gokulraamofficial`. |
+| 2026-06-06 | Guestbook moderation: `pinned` flag on entries; public list filters to pinned-only when no admin cookie. Admin sees everything + per-row pin/unpin. |
+| 2026-06-06 | Hero card surfaces contact strip (email · github · linkedin · cv) on the face — no expand needed. |
+| 2026-06-06 | Secrets panel (typing `secrets`) lists discovered eggs + cryptic hints for unfound; `BackendWarming` replaces the bare "offline" copy on cold-start pages with a polling waker (pings `/api/health` every 4s, reloads on 200, falls back at 45s). |
+| 2026-06-07 | Real content backfill (Alembic data migration): `/now` listening, profile casual bio + interests, museum rooms (coming-of-age / the-court / the-workshop). Every UPDATE guarded against pre-edit defaults, so admin edits survive. |
+| 2026-06-07 | `/uses` section removed (page, nav links, homepage card 005, 404 typer key, API client, backend router, seed). Work card widened to col-12. Model + table kept inert to avoid destructive DDL. |

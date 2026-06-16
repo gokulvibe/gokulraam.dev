@@ -13,8 +13,8 @@ The site has to serve three very different audiences without feeling fragmented:
 | Audience | What they care about | First thing they should see |
 |---|---|---|
 | Recruiters / hiring managers | Skills, experience, signal in 30 seconds | Hero card 001 — name, role, stats, CV download |
-| Fellow developers | TIL notes, projects, stack, taste | `/til`, `/projects`, `/uses` |
-| Friends / personal | Now, badminton, fitness, the human | `/now`, `/badminton`, `/uses` |
+| Fellow developers | TIL notes, projects, stack, taste | `/til`, `/projects` |
+| Friends / personal | Now, badminton, fitness, the human | `/now`, `/badminton` |
 
 The hero card is built so a recruiter can absorb everything they need in one viewport
 without scrolling. Other cards reveal personality on tap.
@@ -73,7 +73,6 @@ gamer dark mode.
 | `/til/rss.xml` | — | RSS | TIL feed |
 | `/now` | 002 | Now | What I'm currently doing (live status + facets) |
 | `/badminton` | 007 | Court diaries | Players + upcoming tournaments (scraped daily) |
-| `/uses` | 005 | Uses | Code + runtime + hardware + sound + court + fitness + daily |
 | `/resume` · `/resume.pdf` | — | Résumé | HTML + downloadable PDF |
 | `/logbook` | — | Logbook | Short-form observations, grouped by day |
 | `/photos` | — | Camera roll | Horizontal film-strip with lightbox |
@@ -176,9 +175,9 @@ A floating pill, fixed bottom-right, mounted globally in `Base.astro`. Renders
 
 | Page | AdminBar actions |
 |---|---|
-| `/` `/work` `/projects` `/now` `/badminton` `/uses` `/til` | `+ new TIL` · sign out |
+| `/` `/work` `/projects` `/now` `/badminton` `/til` | `+ new TIL` · sign out |
 | `/til/<slug>` | `+ new` · publish/unpublish · 🗑 delete · sign out |
-| (future) `/now`, `/uses` | add new item · sign out |
+| (future) `/now` | add new item · sign out |
 
 ### Backend convention
 
@@ -196,7 +195,7 @@ When making a previously-static section editable (e.g. `/now` items), the recipe
 
 1. **Backend**: add the model + schemas + router. Five endpoints.
 2. **Frontend**: create one `Editable<X>` component per field type
-   (`EditableNowItem`, `EditableUsesItem`…). Each follows the convention above.
+   (`EditableNowItem`, `EditableBody`…). Each follows the convention above.
 3. **Page**: replace the static JSX block with the Editable component, passing
    `initial` from the SSR-fetched data and the `entityId`.
 4. **AdminBar**: optionally add a contextual `+ add item` action for that page.
@@ -216,9 +215,9 @@ const data = await fetch(`${API_BASE}/api/...`);
 ```
 
 Otherwise the page is static and saved edits won't appear until the next build.
-Pages with no editable content (`/work`, `/projects`, `/now`, `/uses`,
-`/badminton`) can stay prerendered for now — when they gain editable fields,
-they switch to `prerender = false`.
+Pages with no editable content (`/work`, `/projects`, `/now`, `/badminton`)
+can stay prerendered for now — when they gain editable fields, they switch
+to `prerender = false`.
 
 ## 6. Auth Model
 
@@ -298,13 +297,13 @@ toggle lives top-right, persisted in localStorage.)*
 > template that any visitor can sign up for, claim their own copy of, edit
 > everything, and publish to their own custom domain in a few clicks.
 > Think Carrd / Linktree / Notion sites, but with this Nocturnal Folio
-> aesthetic and a dev-first content model (TIL, /now, /uses, projects, work).
+> aesthetic and a dev-first content model (TIL, /now, projects, work).
 
 ### The product story
 
 1. A visitor lands on `gokulraam.dev`, likes the look, clicks **"Get your own"**.
 2. They sign up with email + password. A new `Site` is seeded for them with
-   placeholder content (their own TIL, Now, Uses, Badminton, Work, Projects).
+   placeholder content (their own TIL, Now, Badminton, Work, Projects).
 3. They edit everything in place — the same inline editing convention they
    see on Gokul's site, just scoped to their data.
 4. They get a free subdomain (`<slug>.gokulraam.dev` or similar) immediately.
@@ -316,7 +315,7 @@ toggle lives top-right, persisted in localStorage.)*
 ```
 +----------+      +----------+      +-----------------------+
 |   User   | <--- |   Site   | ---> | TilPost, NowItem,     |
-| id       | 1:N  | id       | 1:N  | UsesItem, Badminton*, |
+| id       | 1:N  | id       | 1:N  | Badminton*,           |
 | email    |      | owner_id |      | WorkRole, Project, …  |
 | pw_hash  |      | slug     |      | + new site_id FK      |
 +----------+      | domain   |      +-----------------------+
@@ -328,7 +327,7 @@ toggle lives top-right, persisted in localStorage.)*
   and `Site` (id, owner_id, slug, custom_domain nullable, brand_colors JSON,
   is_published, created_at, updated_at)
 - **Every content table gains `site_id INTEGER NOT NULL FK Site.id`**:
-  `til_posts`, `til_attachments`, `now_items`, `uses_items`,
+  `til_posts`, `til_attachments`, `now_items`,
   `badminton_players`, `badminton_tournaments`, plus future `work_roles`,
   `projects`, `awards`, `certifications`.
 - **Every API query becomes site-scoped**: `WHERE site_id = current_site.id`.
@@ -369,14 +368,14 @@ These choices we've already made are forward-compatible — no changes needed:
   id and PATCHes a typed endpoint. When `site_id` lands, scoping happens at the
   backend level — components don't need to change.
 - ✅ **REST endpoints organised by entity** (`/api/til/<id>`, `/api/now/<slug>`,
-  `/api/uses/<id>`): adding a `site_id` filter is a single middleware concern.
+  `/api/badminton/<id>`): adding a `site_id` filter is a single middleware concern.
 - ✅ **`/admin/login` is the only admin route**: when we switch to multi-user,
   it becomes `/login` and handles registration too.
 - ✅ **Astro per-request rendering**: each SSR page resolves "current site" from
   the host header once at the top, then renders normally. Single-tenant for
   the user, multi-tenant for the platform.
-- ✅ **Static section chrome** (category titles, glyphs in `/uses`; player flags
-  in `/badminton`): structured per-row data with editable fields is multi-tenant
+- ✅ **Static section chrome** (player flags in `/badminton`; facet labels in
+  `/now`): structured per-row data with editable fields is multi-tenant
   friendly. Hardcoded design copy stays in code.
 
 ### Things that need to change
