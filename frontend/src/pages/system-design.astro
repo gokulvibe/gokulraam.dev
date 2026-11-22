@@ -1,0 +1,578 @@
+---
+// System Design Handbook — long-form, static reading page.
+// Prerendered (no editables). Mermaid diagrams render client-side and
+// re-render on theme toggle so they match Nocturnal / Daylight.
+import Base from '@/layouts/Base.astro';
+
+const lessons = [
+  { id: 'lesson-1', n: '01', title: 'Top K Elements', sub: 'the heavy hitters' },
+  { id: 'lesson-2', n: '02', title: 'Time-Based Ranking', sub: 'sliding windows' },
+  { id: 'lesson-3', n: '03', title: 'Frequency Counting', sub: 'the viral event' },
+  { id: 'lesson-4', n: '04', title: 'Global Leaderboards', sub: 'complex ranking' },
+  { id: 'lesson-5', n: '05', title: 'Caching & Eviction', sub: 'LRU vs. LFU' },
+  { id: 'lesson-6', n: '06', title: 'Search Autocomplete', sub: 'the trie' },
+  { id: 'lesson-7', n: '07', title: 'Merging Sorted Streams', sub: 'news feeds' },
+  { id: 'lesson-8', n: '08', title: 'Geospatial Search', sub: 'location tracking' },
+  { id: 'lesson-9', n: '09', title: 'Approximate Counting', sub: 'breaking memory limits' },
+];
+
+const likeFlow = `flowchart TD
+  A[User Clicks Like] --> B[API Gateway]
+  B -->|Fast Path O-1| C[(Redis: Cached Total)]
+  B -->|Source of Truth| D[Kafka Topic]
+  D --> E[Consumer Workers]
+  E -->|Micro-Batch 10k items| F[PgBouncer Pooler]
+  F -->|COPY Command| G[(PostgreSQL Primary)]`;
+
+const trieFlow = `graph TD
+  R[Root] --> S[s]
+  S --> Y[y]
+  Y --> S2["s <br/> <i>top_10_cache: system design, system of a down, systolic…</i>"]
+  S2 --> T[t]
+  S2 --> E[e]`;
+
+const likeEvent = '{user_id, video_id, timestamp, action="like"}';
+---
+
+<Base
+  title="System Design Handbook — Gokul Raam"
+  description="A narrative handbook bridging algorithmic intuition with high-scale production architecture: Top K, sliding windows, write-behind caches, leaderboards, LRU/LFU, tries, k-way merge, geohashing, Bloom filters and HyperLogLog."
+>
+  <article class="sd">
+    <header class="mb-12">
+      <div class="label mb-4">// system design</div>
+      <h1 class="display text-5xl md:text-6xl">System Design<br /><span class="italic text-ember">Handbook.</span></h1>
+      <p class="sd-lede mt-6">
+        Nine problems, each told the same way: the naive approach, the DSA evolution, then what
+        production actually runs. Read in order — every lesson patches the previous one's weak spot.
+      </p>
+    </header>
+
+    <nav class="sd-toc" aria-label="Lessons">
+      <div class="label mb-3">// contents</div>
+      <ol>
+        {lessons.map((l) => (
+          <li>
+            <a href={`#${l.id}`}>
+              <span class="sd-toc__n">{l.n}</span>
+              <span class="sd-toc__t">{l.title}</span>
+              <span class="sd-toc__s">{l.sub}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+
+    <div class="prose sd-body">
+      <!-- Lesson 1 -->
+      <section id="lesson-1" class="sd-lesson">
+        <div class="sd-kicker">lesson 01</div>
+        <h2>Top K Elements <span class="sd-h2-sub">the heavy hitters</span></h2>
+        <div class="sd-tags">
+          <span class="sd-tag sd-tag--domain">YouTube Trending, Global Top 10</span>
+          <span class="sd-tag">DSA · Min-Heap, Skip List, Hash Map</span>
+          <span class="sd-tag">Tech · Redis ZSET, Count-Min Sketch</span>
+        </div>
+
+        <blockquote>We start with a simple problem: You have millions of videos, and you want to continuously display the "Top 10 Most Viewed" on the homepage. How do we maintain this ranking dynamically without melting the database?</blockquote>
+
+        <h3>1. The Naive Approach</h3>
+        <p>If we just dump all videos into an array and sort them by view count in the database, we hit <code>O(N log N)</code> time complexity. If we do this every time someone loads the homepage, the CPU will instantly lock up. Sorting the entire database repeatedly is computationally wasteful.</p>
+
+        <h3>2. The DSA Evolution (Min-Heap)</h3>
+        <p>In a standard coding interview, you would use a <strong>Min-Heap of size K (10)</strong>. As millions of videos stream in, you compare their view counts to the smallest video currently in the heap. If a new video has more views, you pop the smallest one out and insert the new one. This beautifully reduces the time complexity to a blazing fast <code>O(N log K)</code>.</p>
+        <p><strong>Why it fails in production:</strong> A Min-Heap is a "lossy" data structure. It is fantastic for static, known datasets, but terrible for streaming systems. Once a video is kicked out of the Top 10, the heap forgets it completely. If that forgotten video suddenly gets a million views an hour later and goes viral, the heap has no way to dynamically bubble it back to the top because it discarded the reference!</p>
+
+        <h3>3. The Production Reality (Redis ZSET)</h3>
+        <p>We need a data structure that tracks the rank of <em>all active</em> items continuously without forgetting them. For this, the industry standard is <strong>Redis Sorted Sets (ZSET)</strong>. Under the hood, Redis combines two structures to give us the best of both worlds:</p>
+        <ul>
+          <li><strong>Hash Map:</strong> Maps the <code>video_id</code> to its exact numerical score. Finding a specific video's score takes perfect <code>O(1)</code> time.</li>
+          <li><strong>Skip List:</strong> A probabilistic, multi-level linked list with "express lanes." It keeps all elements strictly sorted by score. This allows us to update a score and re-rank the item in exactly <code>O(log N)</code> time, maintaining continuous order.</li>
+        </ul>
+
+        <h4>Production Tooling & Code</h4>
+        <pre><code># Instantly add or update a video's view count in O(log N)
+ZINCRBY videos:trending 100 "video_A"
+
+# Instantly fetch the Top 10 videos with their scores in O(log N + K)
+ZREVRANGE videos:trending 0 9 WITHSCORES</code></pre>
+
+        <aside class="sd-box sd-box--interview">
+          <div class="sd-box__label">◇ interview angle</div>
+          <h4>The Scale Wall: What if you have 1 Billion Videos?</h4>
+          <p><strong>The Trap:</strong> Storing 1 billion videos in a Redis ZSET will completely exhaust your expensive RAM, and 99% of those videos will never come close to the Top 10.</p>
+          <p><strong>The Fix:</strong> We implement a "Heavy Hitters" architecture. We place a probabilistic counting algorithm (like a <strong>Count-Min Sketch</strong>) on the edge servers or API gateways. This acts as a bouncer, filtering out the noise (videos with 0 to 10 views). Only when a video crosses a significant threshold (e.g., &gt;1,000 views/hour) is its ID promoted to the global Redis cluster. You just saved terabytes of memory while keeping the Top K perfectly accurate.</p>
+        </aside>
+      </section>
+
+      <!-- Lesson 2 -->
+      <section id="lesson-2" class="sd-lesson">
+        <div class="sd-kicker">lesson 02</div>
+        <h2>Time-Based Ranking <span class="sd-h2-sub">sliding windows</span></h2>
+        <div class="sd-tags">
+          <span class="sd-tag sd-tag--domain">24-Hour Leaderboards, Trending Now</span>
+          <span class="sd-tag">Pattern · Time Buckets, Hierarchical Rollups</span>
+          <span class="sd-tag">Tech · TimescaleDB, InfluxDB, Redis</span>
+        </div>
+
+        <blockquote>Redis ZSET is incredibly fast, but it has a fatal flaw: scores never expire. If a video accumulated 50 million views back in 2012, it will stay stuck at the top of the leaderboard forever. We want a "Top 10 in the last 24 hours" feed. How do we cleanly subtract old views as they age out?</blockquote>
+
+        <h3>1. The Naive Approach</h3>
+        <p>We could store every single "view" event as an individual row with a timestamp in a relational database, and then run a query like <code>SELECT video_id, COUNT(*) WHERE time &gt; NOW() - INTERVAL '24 hours'</code>. However, scanning millions of raw rows on the fly for every single user request will inevitably crash the database.</p>
+
+        <h3>2. The Evolution (Time Buckets)</h3>
+        <p>Instead of tracking individual views and losing the timing, we group incoming views into small <strong>Time Buckets</strong> (e.g., 5-minute intervals). We use a Time-Series Database (TSDB) like <strong>TimescaleDB</strong> (a PostgreSQL extension) or <strong>InfluxDB</strong>. These databases physically partition data on disk by time intervals, making range queries over time periods lightning fast.</p>
+        <p>Now, instead of scanning millions of individual rows, the database just adds up the sums of the pre-aggregated 5-minute buckets from the last 24 hours.</p>
+
+        <h3>3. The Two-Layer Production Architecture</h3>
+        <p>Even with a TSDB, we cannot have the user's mobile app querying the database directly. We must strictly separate the heavy write/compute path from the fast read path:</p>
+        <ol>
+          <li><strong>Layer 1 — The Scratchpad:</strong> The TSDB safely ingests and groups the high-volume streaming data into 5-minute buckets.</li>
+          <li><strong>The Aggregator Worker:</strong> A background worker wakes up every minute and runs the 24-hour SUM query on the TSDB to fetch the Top 10 results.</li>
+          <li><strong>Layer 2 — The Serving Layer:</strong> The worker takes those final Top 10 results and blindly overwrites a tiny Redis ZSET (e.g., <code>videos:rank:24h</code>). The user API only reads from Redis, keeping the read path at perfect <code>O(1)</code> speed.</li>
+        </ol>
+
+        <h4>The TimescaleDB Query (run by the background worker)</h4>
+        <pre><code class="language-sql">SELECT video_id, SUM(views) as rolling_24h_views
+FROM video_views_5m_buckets
+WHERE time &gt; NOW() - INTERVAL '24 hours'
+GROUP BY video_id
+ORDER BY rolling_24h_views DESC
+LIMIT 10;</code></pre>
+
+        <aside class="sd-box sd-box--tip">
+          <div class="sd-box__label">◆ production tip</div>
+          <h4>Storage Optimization: Sparse Data & Rollups</h4>
+          <p>To prevent massive storage costs, we use <strong>Sparse Storage</strong>: if a video gets 0 views during a 5-minute window, we simply don't write a record to the database at all. Furthermore, if the product manager asks for a 30-day window, summing thousands of 5-minute buckets is too slow. We use <strong>Hierarchical Aggregation</strong> (Rollups): a nightly background job permanently compresses yesterday's 5-minute buckets into 1-hour buckets, keeping the math perfectly accurate while drastically compressing the storage footprint.</p>
+        </aside>
+      </section>
+
+      <!-- Lesson 3 -->
+      <section id="lesson-3" class="sd-lesson">
+        <div class="sd-kicker">lesson 03</div>
+        <h2>Frequency Counting <span class="sd-h2-sub">the viral event</span></h2>
+        <div class="sd-tags">
+          <span class="sd-tag sd-tag--domain">Viral Likes, Ad Clicks, High-Volume Writes</span>
+          <span class="sd-tag">Pattern · Write-Behind Caching, Micro-Batching</span>
+          <span class="sd-tag">Tech · Redis INCR, Kafka, PgBouncer, PostgreSQL COPY</span>
+        </div>
+
+        <blockquote>We solved reading data fast. Now let's solve writing data fast. A global celebrity posts a video, and 500,000 people click "Like" within 10 seconds. How does the database survive this write tsunami?</blockquote>
+
+        <h3>1. The Naive Approach</h3>
+        <p>Firing 500,000 <code>UPDATE videos SET likes = likes + 1</code> commands directly at PostgreSQL. This immediately causes massive row-level locking contention. The database can only process one update to that specific video row at a time. The connections pile up, the database connection pool exhausts, and the entire API goes down.</p>
+
+        <h3>2. The Evolution (Write-Behind Cache)</h3>
+        <p>We intercept the massive traffic spike using RAM. When a user clicks like, we hit Redis with the atomic <code>INCR</code> command. Because Redis operates on a single-threaded event loop and is purely in-memory, it easily swallows over 100,000 increments per second sequentially without any locking overhead.</p>
+        <p>A background worker periodically reads the Redis count (e.g., 50,000), resets the Redis counter to 0, and sends exactly <strong>one</strong> bulk update to PostgreSQL. We successfully turned 50,000 database hits into 1.</p>
+
+        <h3>3. The Production Reality (Rich Metadata & Durability)</h3>
+        <p>There is a fatal flaw in relying purely on Redis Write-Behind: A "Like" isn't just an anonymous number. It is a relational fact (User X liked Video Y at Time Z). We need this metadata to ensure a user can't like a video twice. Furthermore, if this is an <strong>Ad Click</strong> system, a Redis crash before the worker flushes the data means lost revenue.</p>
+        <p>To balance instant UI feedback with bulletproof durability, the true production architecture splits the path:</p>
+        <ul>
+          <li><strong>The Fast Path (Redis):</strong> We blindly <code>INCR</code> a cached counter in Redis just so the frontend UI can update instantly and feel blazing fast to the user.</li>
+          <li><strong>The Durable Source of Truth (Kafka):</strong> Simultaneously, the API writes a rich JSON event <code>{likeEvent}</code> to a Kafka topic. Kafka safely and sequentially writes this event to a physical disk, guaranteeing zero data loss even if the database is currently on fire.</li>
+          <li><strong>Micro-Batching (PgBouncer & COPY):</strong> A fleet of backend consumers read these events from Kafka at their own pace. They buffer the events in memory until they collect 10,000 likes or 5 seconds pass. They connect to PostgreSQL through a connection pooler (<strong>PgBouncer</strong>), which multiplexes thousands of incoming requests over a tiny pool of actual database connections. Finally, they bulk insert the data using PostgreSQL's native <code>COPY</code> command (or <code>executeBatch()</code>), bypassing individual query parsing overhead entirely.</li>
+        </ul>
+
+        <figure class="sd-diagram" data-mermaid={likeFlow}>
+          <div class="sd-diagram__canvas" aria-label="Like event flow: API gateway splits into Redis fast path and Kafka durable path, consumers micro-batch through PgBouncer into PostgreSQL"></div>
+          <figcaption>fig. 3 — the split write path</figcaption>
+        </figure>
+      </section>
+
+      <!-- Lesson 4 -->
+      <section id="lesson-4" class="sd-lesson">
+        <div class="sd-kicker">lesson 04</div>
+        <h2>Global Leaderboards <span class="sd-h2-sub">complex ranking</span></h2>
+        <div class="sd-tags">
+          <span class="sd-tag sd-tag--domain">Gaming (Valorant, Apex Legends)</span>
+          <span class="sd-tag">DSA · Composite Scoring, Sharded Skip Lists</span>
+          <span class="sd-tag">Tech · Sharded Redis ZSET, AOF/RDB</span>
+        </div>
+
+        <blockquote>Now we shift from tracking abstract items (like videos) to tracking 50 million actual users playing a competitive video game. We can't just track the Top 10 anymore. Player #4,589,201 expects to open the app, instantly see their exact global rank, and see the specific players right above and below them.</blockquote>
+
+        <h3>1. The Solution (Redis ZSET to the Rescue)</h3>
+        <p>Because Redis ZSET uses a Skip List under the hood, we can instantly jump to the exact middle of a 50-million item list without tearing the data structure apart.</p>
+        <ul>
+          <li><code>ZREVRANK global_leaderboard user_892</code> returns their exact numerical rank.</li>
+          <li><code>ZREVRANGE global_leaderboard 45891 45893</code> instantly fetches the player and their immediate neighbors.</li>
+        </ul>
+
+        <h3>2. The Curveball (Breaking Ties Fairly)</h3>
+        <p>If Player A and Player B both achieve exactly 5,000 points, Redis breaks the tie by sorting their member strings (User IDs) alphabetically. This is a terrible user experience. In gaming, whoever achieved the score <em>first</em> should rank higher.</p>
+        <p><strong>The Composite Score Trick:</strong> A Redis ZSET only accepts a single floating-point number as a score. We must mathematically fuse the Points and the Timestamp into one number. We do this by inverting the timestamp (subtracting the event time from a massive future date constant).</p>
+
+        <pre><code>Score: 5000 points. Max Time Constant: 9999999999.
+Player A hits 5000 pts at timestamp 1600000000.
+Decimal: (9999999999 - 1600000000) = 8399999999.
+Player A's Final Score: 5000.8399999999
+
+Player B hits 5000 pts 5 seconds later at timestamp 1600000005.
+Decimal: (9999999999 - 1600000005) = 8399999994.
+Player B's Final Score: 5000.8399999994
+
+Player A is mathematically higher!</code></pre>
+
+        <p><strong>The 3rd Tie-Breaker (String Packing):</strong> Floating point precision only gives us ~15 significant digits. If we need a 3rd tie-breaker (like "Win Rate Percentage"), we run out of float space. Instead, we hijack Redis's alphabetical sorting fallback by prepending the win rate to the string ID. <code>095:user_123</code> naturally beats <code>040:user_456</code> in a descending search.</p>
+
+        <aside class="sd-box sd-box--warning">
+          <div class="sd-box__label">▲ architecture trap</div>
+          <h4>Data Skew & Durability</h4>
+          <ul>
+            <li><strong>Data Skew:</strong> 50 million users and their metadata will not fit on one Redis node. You must partition (shard) the leaderboard by score ranges (e.g., Node 1: 0–1000 pts, Node 2: 1001–2000 pts). <strong>The Trap:</strong> 80% of players are casuals stuck in the lowest tier. If you use fixed ranges, Node 1 will melt down from CPU overload while Node 5 sits entirely empty. You must dynamically size your shard ranges to evenly distribute the bell curve of players.</li>
+            <li><strong>Durability:</strong> People often assume Redis is just a volatile cache that evaporates on reboot. In modern system design, Redis is configured as a durable database. Production systems use <strong>AOF (Append-Only Files)</strong> to log every single command to the hard drive in real-time, combined with <strong>RDB (Snapshots)</strong> and Master-Replica streaming to ensure the global leaderboard never drops a single point during a crash.</li>
+          </ul>
+        </aside>
+      </section>
+
+      <!-- Lesson 5 -->
+      <section id="lesson-5" class="sd-lesson">
+        <div class="sd-kicker">lesson 05</div>
+        <h2>Caching & Eviction <span class="sd-h2-sub">LRU vs. LFU</span></h2>
+        <div class="sd-tags">
+          <span class="sd-tag sd-tag--domain">Netflix Edges, Amazon Carts, CDNs</span>
+          <span class="sd-tag">DSA · Doubly Linked Lists, Hash Maps</span>
+          <span class="sd-tag">Tech · Redis Eviction Policies, Open Connect</span>
+        </div>
+
+        <blockquote>We are storing all this fast data in expensive RAM. Eventually, the RAM fills up to 100% capacity. When the next item needs to be cached, we have to brutally delete something to make room. Deleting the wrong item means a cache miss, forcing a slow, expensive database read.</blockquote>
+
+        <h3>1. The LRU Algorithm (Least Recently Used)</h3>
+        <p><strong>How it works (DSA):</strong> We use a Hash Map connected to a Doubly Linked List. When an item is read, we find it instantly via the Hash Map, snip it out of the list, and move it to the Head (Most Recently Used). When memory is full, we chop off the Tail.</p>
+        <p><strong>The Production Flaw (Cache Pollution):</strong> Imagine it is 2:00 AM, and your data science team runs a background job to back up 50,000 old, dead movies. Because the job "reads" these movies, LRU dutifully moves every single one of them to the Head of the list. By 2:05 AM, all your popular active movies have been pushed off the Tail and deleted. The cache is entirely polluted with dead data.</p>
+        <p><em>Best used for:</em> <strong>User Session Data</strong> (where relevance is strictly time-bound. If someone hasn't clicked anything in 30 minutes, they closed the tab).</p>
+
+        <h3>2. The LFU Algorithm (Least Frequently Used)</h3>
+        <p><strong>How it works (DSA):</strong> We track a frequency counter on every item. The item clicked the fewest times historically is evicted first.</p>
+        <p><strong>The Production Flaw (Viral Ghosts):</strong> An obscure movie goes massively viral in January, gets 10 million views, and then dies completely by August. Because its historical score is 10M, LFU will never delete it, even though no one is watching it anymore. It haunts your RAM forever. (Fix: We implement an exponential decay function to periodically halve all scores over time).</p>
+        <p><em>Best used for:</em> <strong>Product Details</strong> (where relevance is based on overall global popularity, not just a recent random click).</p>
+
+        <h3>3. The Production Reality (Approximated Eviction)</h3>
+        <p>Maintaining millions of <code>next</code> and <code>prev</code> linked-list pointers consumes massive amounts of metadata memory. Redis doesn't use strict LRU/LFU Linked Lists. It uses <strong>Approximated Eviction</strong>. When memory is full, it randomly samples 5 keys, looks at their tiny internal timestamps or counters, and deletes the worst one among those 5. It is 99% as effective as strict LRU, but uses zero pointer memory! You enable this via <code>maxmemory-policy allkeys-lru</code>.</p>
+        <p><strong>A Note on Netflix:</strong> Netflix does NOT cache 5GB <code>.mp4</code> movies in Redis. Edge Servers (CDNs like Open Connect) cache physical 2-second video <em>chunks</em> on fast NVMe SSDs, sliding only the next few seconds of chunks into RAM. Redis is used purely in the backend to cache the <em>metadata</em> (user profiles, thumbnails, bookmark timestamps).</p>
+      </section>
+
+      <!-- Lesson 6 -->
+      <section id="lesson-6" class="sd-lesson">
+        <div class="sd-kicker">lesson 06</div>
+        <h2>Search Autocomplete <span class="sd-h2-sub">the trie</span></h2>
+        <div class="sd-tags">
+          <span class="sd-tag sd-tag--domain">YouTube / Google Search Bar</span>
+          <span class="sd-tag">DSA · Prefix Trees (Tries), FST</span>
+          <span class="sd-tag">Tech · Elasticsearch, RediSearch, Hadoop</span>
+        </div>
+
+        <blockquote>You go to YouTube and type "sys". Before you even lift your finger off the key, a dropdown instantly suggests "system design interview". How does the backend search billions of historical queries, rank them, and return the Top 10 in under 5 milliseconds?</blockquote>
+
+        <h3>1. The Naive Approach</h3>
+        <p>Using a standard relational database with SQL: <code>SELECT term FROM historical_searches WHERE term LIKE 'sys%' ORDER BY frequency DESC LIMIT 10</code>. When you ask a B-Tree index for a prefix match, it has to scan massive chunks of the index, load all matching strings into memory, and dynamically sort them by frequency on every single keystroke. The database CPU will hit 100% instantly.</p>
+
+        <h3>2. The Evolution (The Trie)</h3>
+        <p>We build a Prefix Tree in memory (Root → s → y → s). Finding the exact node for "sys" takes exactly 3 steps (<code>O(L)</code> where L is the length of the word). But we still have a major problem! Once we are standing on the "sys" node, there might be 50,000 branches below it (<code>system design</code>, <code>system of a down</code>, etc.). If we have to recursively traverse all 50,000 branches every time someone types a letter just to compare frequencies and find the Top 10, the CPU still locks up.</p>
+        <p><strong>The Fix (Pre-computed Top K Caches):</strong> In system design, we heavily favor making writes complex so that reads can be instantaneous. <em>Inside every single node</em> of the Trie, we store a hardcoded array of the Top 10 suggestions for that prefix. When you type "s-y-s", the API simply grabs the array stored exactly at the <code>s</code> node and returns it in perfect <code>O(1)</code> time. Zero traversal down the branches is required.</p>
+
+        <figure class="sd-diagram" data-mermaid={trieFlow}>
+          <div class="sd-diagram__canvas" aria-label="Trie path root to s to y to s, where the final s node stores a pre-computed top 10 suggestion cache"></div>
+          <figcaption>fig. 6 — top-k cached at every node</figcaption>
+        </figure>
+
+        <h3>3. Production Tooling & Lambda Architecture</h3>
+        <p>In reality, you don't build this from scratch. You use <strong>Elasticsearch (Completion Suggester)</strong>, which uses an <strong>FST (Finite State Transducer)</strong>. Unlike a standard Trie that only shares prefixes, an FST also shares suffixes (e.g., merging the <code>i-n-g</code> nodes of "testing" and "fishing") to save massive amounts of RAM.</p>
+        <p><strong>The Architecture Trap:</strong> Updating a 10GB Trie in real-time causes massive write contention. We solve this using the <strong>Lambda Architecture (Two-Trie System)</strong>:</p>
+        <ol>
+          <li><strong>Historical Trie:</strong> A massive, read-only Trie built completely offline every night by big data pipelines (Hadoop/Spark).</li>
+          <li><strong>Trending Trie:</strong> A tiny, incredibly fast Trie (using <strong>RediSearch</strong> <code>FT.SUGADD</code>) holding viral search terms from just the last 24 hours.</li>
+        </ol>
+        <p>The API Gateway fires the user's keystroke to both Tries simultaneously, weights the results, and merges them together on the fly.</p>
+      </section>
+
+      <!-- Lesson 7 -->
+      <section id="lesson-7" class="sd-lesson">
+        <div class="sd-kicker">lesson 07</div>
+        <h2>Merging Sorted Streams <span class="sd-h2-sub">news feeds</span></h2>
+        <div class="sd-tags">
+          <span class="sd-tag sd-tag--domain">Twitter / Instagram Timelines</span>
+          <span class="sd-tag">DSA · K-Way Merge (Min-Heap)</span>
+          <span class="sd-tag">Tech · Cassandra, Application Layer Compute</span>
+        </div>
+
+        <blockquote>Imagine you follow 500 people. When you open your social media app, the backend has to grab the 20 most recent posts from each of those 500 people, and perfectly stitch them together into one chronological timeline.</blockquote>
+
+        <h3>1. The Naive Approach</h3>
+        <p>The backend queries the database for 10,000 posts, dumps them all into a massive array, and calls <code>array.sort(by: timestamp)</code>. Sorting is an <code>O(N log N)</code> operation. Doing heavy sorting for every single user, every time they refresh their feed, will cause your API servers to overheat and crash.</p>
+
+        <h3>2. The Evolution (K-Way Merge)</h3>
+        <p>Because each individual user's list of posts is <em>already sorted by time</em> in the database (typically a Wide-Column Store like <strong>Apache Cassandra</strong> or ScyllaDB), we do not need to sort the whole pile. We use a classic DSA pattern called the <strong>K-Way Merge</strong>, executed in the Application Layer (e.g., using Java's <code>PriorityQueue</code> or Python's <code>heapq</code>).</p>
+        <ul>
+          <li>Take just the 1 absolute newest post from each of the 500 friends and place them in a Min-Heap.</li>
+          <li>Pop the newest post off the top of the heap. (This is Post #1 in your timeline feed).</li>
+          <li>Look at who authored that post, go back to their list, grab their <em>second</em> newest post, and push it into the heap to replace the one you just took.</li>
+          <li>Repeat this process 20 times. Instead of sorting 10,000 items, your heap only ever holds 500 items, and you just generated the feed in a fraction of a millisecond!</li>
+        </ul>
+
+        <aside class="sd-box sd-box--warning">
+          <div class="sd-box__label">▲ architecture trap</div>
+          <h4>The Justin Bieber Problem (Fan-out)</h4>
+          <p>If Elon Musk tweets, and we try to push that tweet into the pre-computed Redis news feeds of his 150 million followers (an architecture called <strong>Fan-out on Write</strong>), it will take 40 hours of background processing. By the time the last person gets the tweet, it's two days old.</p>
+          <p><strong>The Hybrid Solution:</strong> Normal users use Fan-out on Write (pushing directly to followers' caches). Celebrities use <strong>Fan-out on Read</strong>. When a celebrity tweets, it is written to a single location (their Outbox). When you open the app, your backend does a lightning-fast memory merge of your normal pre-computed feed + the Outboxes of the few celebrities you follow.</p>
+        </aside>
+      </section>
+
+      <!-- Lesson 8 -->
+      <section id="lesson-8" class="sd-lesson">
+        <div class="sd-kicker">lesson 08</div>
+        <h2>Geospatial Search <span class="sd-h2-sub">location tracking</span></h2>
+        <div class="sd-tags">
+          <span class="sd-tag sd-tag--domain">Uber, DoorDash, Tinder</span>
+          <span class="sd-tag">Pattern · Geohashing, R-Trees</span>
+          <span class="sd-tag">Tech · Redis GEO, PostgreSQL (PostGIS)</span>
+        </div>
+
+        <blockquote>You open the Uber app, and it instantly shows you the 5 closest drivers on the map. How does it convert the physical geometry of Planet Earth into a fast database lookup?</blockquote>
+
+        <h3>1. The Naive Approach</h3>
+        <p>Using the Haversine formula in a SQL query: <code>SELECT driver_id FROM drivers WHERE haversine_distance(user_lat, user_lon, driver_lat, driver_lon) &lt; 2</code>. This calculates the great-circle distance using sines, cosines, and square roots. If you have 50,000 active drivers, the database has to run heavy trigonometry 50,000 times for a single request via a full table scan. The CPU will melt.</p>
+
+        <h3>2. The Evolution (Geohashing)</h3>
+        <p>We stop doing math on the read path entirely. To index locations, we use <strong>Geohashing</strong> to convert 2D coordinates (latitude/longitude) into a 1D string. We divide a map of the world into 32 grid squares and assign a letter/number to each. As you zoom in, the string gets longer and more precise. <code>tq3b</code> represents a large city grid. <code>tq3b9c</code> represents a tiny 1.2km bounding box inside it.</p>
+        <p><strong>The Magic:</strong> If you and a driver share the same string prefix (e.g., you are both in <code>tq3b9…</code>), you are near each other! We successfully turned an expensive trigonometric math problem into a blazing fast string-prefix database lookup.</p>
+
+        <aside class="sd-box sd-box--interview">
+          <div class="sd-box__label">◇ interview angle</div>
+          <h4>The Edge Trap & Technology Choices</h4>
+          <p><strong>The Trap:</strong> What if you are standing exactly on the eastern edge of your grid square (<code>tq3b</code>), and the driver is only 10 feet away from you, but they are technically across the invisible border in the neighboring square (<code>tq3c</code>)? Their string prefix is completely different, and your query won't find them! Therefore, your backend algorithm must calculate your Geohash AND the Geohashes of the 8 surrounding neighbor squares, querying all 9 boxes simultaneously.</p>
+          <p><strong>Technology Choices:</strong> For highly dynamic moving objects with massive write contention (100k drivers updating every 3 seconds), use <strong>Redis GEO</strong> (Commands: <code>GEOADD</code>, <code>GEORADIUS</code>). For static objects doing complex geographical polygon queries (Yelp Restaurants), use a persistent database with a spatial index like <strong>PostgreSQL with the PostGIS extension</strong> (which uses R-Trees and overlapping bounding boxes on disk).</p>
+        </aside>
+      </section>
+
+      <!-- Lesson 9 -->
+      <section id="lesson-9" class="sd-lesson">
+        <div class="sd-kicker">lesson 09</div>
+        <h2>Approximate Counting <span class="sd-h2-sub">breaking memory limits</span></h2>
+        <div class="sd-tags">
+          <span class="sd-tag sd-tag--domain">Safe Browsing, Stream Analytics</span>
+          <span class="sd-tag">DSA · Probabilistic Data Structures</span>
+          <span class="sd-tag">Tech · Bloom Filters, HyperLogLog</span>
+        </div>
+
+        <blockquote>Sometimes, absolute mathematical precision is the enemy of scale. When data gets too astronomically large to physically fit in RAM, we must trade a tiny margin of error for massive memory compression.</blockquote>
+
+        <h3>1. The Bloom Filter (Approximate Membership)</h3>
+        <p>Google Chrome needs to check if the URL you just typed is in a database of 10 billion known malicious URLs. They cannot make a network request for every site you visit (too slow), so the database must live locally on your laptop. Storing 10 billion string URLs requires ~100GB of RAM. Impossible.</p>
+        <p><strong>The Fix:</strong> We stop storing strings entirely. We use a <strong>Bloom Filter</strong> (a massive array of bits that starts as all zeroes). When Google adds <code>evil.com</code> to their master list, they pass it through 3 hashing algorithms, resulting in the numbers 4, 12, and 85. They flip those specific bits to <code>1</code> in the array. Your browser downloads this tiny 30MB bit array. When you type a URL, Chrome hashes it 3 times. If those 3 bits are <code>1</code>, Chrome pauses and does a network check.</p>
+        <p><em>Trade-off:</em> False positives are possible (a safe site might randomly hash to the same three bits), but false negatives are mathematically impossible. We compressed 100GB to 30MB!</p>
+        <p><em>Note on deletions:</em> You cannot delete from a standard Bloom Filter without accidentally deleting shared hashes. To make it deletable, use a <strong>Counting Bloom Filter</strong>, which changes the bits into integers so you can increment/decrement, though this multiplies your RAM cost by 8.</p>
+
+        <h3>2. HyperLogLog (Approximate Cardinality)</h3>
+        <p>A YouTube livestream has 10 million unique viewers. The PM wants to count unique viewers (ignoring page refreshes). Storing 10 million UUIDs in a Hash Set to count them takes 100MB per stream. If there are 100,000 concurrent streams, keeping those Hash Sets in memory requires 10 Terabytes of RAM.</p>
+        <p><strong>The Fix (The Coin Flip Math):</strong> We use <strong>HyperLogLog (HLL)</strong>. We stop storing User IDs. Instead, we hash the user IDs into binary strings (e.g., <code>01001011…</code>). We track the <em>longest streak of leading zeroes</em> we have seen. If you flip a coin and get Heads 1 time, you probably only flipped it a few times. If you flip a coin and get Heads 20 times in a row, probability dictates you must have been flipping it millions of times to achieve such a rare streak. HLL estimates the crowd size based on the mathematical rarity of the leading zeroes.</p>
+        <p><strong>Production Math:</strong> To fix the variance of lucky outliers, HyperLogLog splits the incoming hashes into exactly <strong>16,384 distinct buckets</strong>. It tracks the maximum zeroes in each bucket, and averages them together using a <strong>Harmonic Mean</strong> (which aggressively pulls down massive outliers). By doing this, Redis natively (using <code>PFADD</code> and <code>PFCOUNT</code>) compresses any dataset of any size (even billions) down to exactly <strong>12 Kilobytes</strong> of memory, guaranteeing an incredibly accurate error rate of only 0.81%!</p>
+      </section>
+    </div>
+
+    <footer class="sd-end">
+      <span class="text-gold">◇</span>
+      <span>end of handbook · <a href="#" class="sd-top">back to top ↑</a></span>
+    </footer>
+  </article>
+</Base>
+
+<script>
+  // Mermaid is ~heavy, so load it only on this page and only when a diagram exists.
+  // Theme is derived from the site's CSS tokens and re-rendered on theme toggle.
+  const figures = Array.from(document.querySelectorAll<HTMLElement>('.sd-diagram[data-mermaid]'));
+  let seq = 0;
+
+  function themeVars() {
+    const cs = getComputedStyle(document.documentElement);
+    const v = (n: string) => cs.getPropertyValue(n).trim();
+    const light = document.documentElement.getAttribute('data-theme') === 'light';
+    return {
+      darkMode: !light,
+      background: 'transparent',
+      fontFamily: '"JetBrains Mono", ui-monospace, monospace',
+      fontSize: '13px',
+      primaryColor: v('--c-surface'),
+      primaryBorderColor: v('--c-accent'),
+      primaryTextColor: v('--c-text'),
+      secondaryColor: v('--c-bg-2'),
+      tertiaryColor: v('--c-bg-2'),
+      lineColor: v('--c-accent-2'),
+      textColor: v('--c-text-2'),
+      edgeLabelBackground: v('--c-bg'),
+      clusterBkg: v('--c-bg-2'),
+    };
+  }
+
+  async function render() {
+    if (!figures.length) return;
+    const { default: mermaid } = await import('mermaid');
+    mermaid.initialize({ startOnLoad: false, theme: 'base', themeVariables: themeVars(), securityLevel: 'strict' });
+    for (const fig of figures) {
+      const canvas = fig.querySelector<HTMLElement>('.sd-diagram__canvas');
+      const src = fig.dataset.mermaid;
+      if (!canvas || !src) continue;
+      try {
+        const { svg } = await mermaid.render(`sd-mmd-${seq++}`, src);
+        canvas.innerHTML = svg;
+      } catch (err) {
+        console.warn('[system-design] mermaid render failed', err);
+        canvas.textContent = src;
+        canvas.classList.add('sd-diagram__canvas--fallback');
+      }
+    }
+  }
+
+  render();
+  new MutationObserver(() => render()).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-theme'],
+  });
+</script>
+
+<style>
+  .sd { max-width: 72ch; }
+
+  .sd-lede {
+    max-width: 58ch;
+    font-size: 1.125rem;
+    line-height: 1.7;
+    color: var(--c-text-muted);
+    font-style: italic;
+  }
+
+  /* ─── Contents ─────────────────────────────── */
+  .sd-toc {
+    border-top: 1px solid var(--c-rule-strong);
+    border-bottom: 1px solid var(--c-rule-strong);
+    padding: 1.25rem 0 1rem;
+    margin-bottom: 3.5rem;
+  }
+  .sd-toc ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.15rem; }
+  @media (min-width: 640px) { .sd-toc ol { grid-template-columns: 1fr 1fr; column-gap: 2rem; } }
+  .sd-toc a {
+    display: grid;
+    grid-template-columns: 2.2rem 1fr;
+    align-items: baseline;
+    padding: 0.4rem 0;
+    color: var(--c-text);
+    transition: color 0.2s;
+  }
+  .sd-toc a:hover { color: var(--c-accent); }
+  .sd-toc__n { font-family: theme('fontFamily.mono'); font-size: 0.72rem; color: var(--c-accent-2); letter-spacing: 0.1em; }
+  .sd-toc__t { font-family: theme('fontFamily.display'); font-size: 1.05rem; }
+  .sd-toc__s {
+    grid-column: 2;
+    font-family: theme('fontFamily.mono');
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--c-text-soft);
+  }
+
+  /* ─── Lessons ──────────────────────────────── */
+  .sd-body { max-width: none; }
+  .sd-lesson { scroll-margin-top: 6rem; padding-bottom: 3rem; margin-bottom: 3rem; border-bottom: 1px solid var(--c-rule); }
+  .sd-lesson:last-child { border-bottom: 0; }
+  .sd-kicker {
+    font-family: theme('fontFamily.mono');
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--c-accent-2);
+  }
+  .sd-body h2 { margin-top: 0.35em; color: var(--c-text); line-height: 1.15; }
+  .sd-h2-sub { display: block; font-style: italic; font-size: 0.6em; color: var(--c-accent); margin-top: 0.2em; }
+  .sd-body h3 { color: var(--c-text); }
+  .sd-body h4 {
+    font-family: theme('fontFamily.mono');
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--c-text-muted);
+    margin: 2em 0 0.6em;
+  }
+  .sd-body strong { color: var(--c-text); }
+
+  .sd-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 1rem 0 1.5rem; }
+  .sd-tag {
+    font-family: theme('fontFamily.mono');
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid var(--c-rule-strong);
+    color: var(--c-text-muted);
+  }
+  .sd-tag--domain { color: var(--c-accent); border-color: color-mix(in srgb, var(--c-accent) 40%, transparent); }
+
+  /* ─── Callouts ─────────────────────────────── */
+  .sd-box {
+    margin: 2rem 0;
+    padding: 1.4rem 1.5rem 0.6rem;
+    border-radius: 0.6rem;
+    border: 1px solid var(--c-rule-strong);
+    border-left-width: 3px;
+    background: var(--c-bg-2);
+  }
+  .sd-box h4 {
+    margin: 0.3rem 0 0.6rem;
+    font-family: theme('fontFamily.display');
+    font-size: 1.2rem;
+    text-transform: none;
+    letter-spacing: -0.01em;
+    color: var(--c-text);
+  }
+  .sd-box__label {
+    font-family: theme('fontFamily.mono');
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+  }
+  .sd-box--interview { border-left-color: var(--c-accent-2); }
+  .sd-box--interview .sd-box__label { color: var(--c-accent-2); }
+  .sd-box--tip { border-left-color: var(--c-accent); }
+  .sd-box--tip .sd-box__label { color: var(--c-accent); }
+  .sd-box--warning { border-left-color: #d9573b; }
+  .sd-box--warning .sd-box__label { color: #d9573b; }
+  :global([data-theme='light']) .sd-box { background: var(--c-surface); }
+  :global([data-theme='light']) .sd-box--warning { border-left-color: #b9472f; }
+  :global([data-theme='light']) .sd-box--warning .sd-box__label { color: #b9472f; }
+
+  /* ─── Diagrams ─────────────────────────────── */
+  .sd-diagram {
+    margin: 2rem 0;
+    padding: 1.5rem 1rem 0.75rem;
+    border: 1px solid var(--c-rule-strong);
+    border-radius: 0.6rem;
+    background: var(--c-bg-2);
+  }
+  :global([data-theme='light']) .sd-diagram { background: var(--c-surface); }
+  .sd-diagram__canvas { overflow-x: auto; text-align: center; min-height: 4rem; text-transform: none; letter-spacing: normal; }
+  .sd-diagram__canvas :global(*) { text-transform: none !important; }
+  .sd-diagram__canvas :global(svg) { max-width: 100%; height: auto; margin: 0 auto; }
+  .sd-diagram__canvas--fallback { white-space: pre; text-align: left; font-family: theme('fontFamily.mono'); font-size: 0.8rem; }
+  .sd-diagram figcaption {
+    margin-top: 0.75rem;
+    text-align: center;
+    font-family: theme('fontFamily.mono');
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--c-text-soft);
+  }
+
+  .sd-end {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    font-family: theme('fontFamily.mono');
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--c-text-soft);
+  }
+  .sd-top:hover { color: var(--c-text); }
+</style>
