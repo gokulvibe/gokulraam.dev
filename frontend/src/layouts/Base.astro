@@ -118,10 +118,11 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://gokulraa
           <span class="text-mist">/</span>
           <span class="text-mist group-hover:text-cream transition-colors">raam</span>
         </a>
-        <nav class="hidden gap-7 font-mono text-[11.5px] uppercase tracking-[0.18em] text-mist md:flex">
+        <nav class="hidden gap-4 whitespace-nowrap font-mono text-[11px] uppercase tracking-[0.1em] text-mist md:flex lg:gap-7 lg:text-[11.5px] lg:tracking-[0.18em]">
           <a href="/work" class="hover:text-cream transition-colors">work</a>
           <a href="/projects" class="hover:text-cream transition-colors">projects</a>
           <a href="/til" class="hover:text-cream transition-colors">til</a>
+          <a href="/system-design" class="hover:text-cream transition-colors">system design</a>
           <a href="/now" class="hover:text-cream transition-colors">now</a>
           <a href="/badminton" class="hover:text-cream transition-colors">badminton</a>
           <a
@@ -155,14 +156,15 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://gokulraa
           <a href="/work" class="mobile-menu__link"><span class="mobile-menu__num">01</span> work</a>
           <a href="/projects" class="mobile-menu__link"><span class="mobile-menu__num">02</span> projects</a>
           <a href="/til" class="mobile-menu__link"><span class="mobile-menu__num">03</span> til</a>
-          <a href="/logbook" class="mobile-menu__link"><span class="mobile-menu__num">04</span> logbook</a>
-          <a href="/now" class="mobile-menu__link"><span class="mobile-menu__num">05</span> now</a>
-          <a href="/badminton" class="mobile-menu__link"><span class="mobile-menu__num">06</span> badminton</a>
+          <a href="/system-design" class="mobile-menu__link"><span class="mobile-menu__num">04</span> system design</a>
+          <a href="/logbook" class="mobile-menu__link"><span class="mobile-menu__num">05</span> logbook</a>
+          <a href="/now" class="mobile-menu__link"><span class="mobile-menu__num">06</span> now</a>
+          <a href="/badminton" class="mobile-menu__link"><span class="mobile-menu__num">07</span> badminton</a>
           <a href="/guestbook" class="mobile-menu__link mobile-menu__link--gold">
-            <span class="mobile-menu__num">07</span> <span class="text-gold">✎</span> guestbook
+            <span class="mobile-menu__num">08</span> <span class="text-gold">✎</span> guestbook
           </a>
           <a href="/resume.pdf" class="mobile-menu__link mobile-menu__link--ember">
-            <span class="mobile-menu__num">08</span> cv ↗
+            <span class="mobile-menu__num">09</span> cv ↗
           </a>
         </nav>
         <button type="button" class="mobile-menu__close" id="mobile-menu-close" aria-label="Close menu">close ×</button>

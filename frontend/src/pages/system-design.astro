@@ -314,9 +314,9 @@ Player A is mathematically higher!</code></pre>
 
         <aside class="sd-box sd-box--warning">
           <div class="sd-box__label">▲ architecture trap</div>
-          <h4>The Celebrity Problem (Fan-out)</h4>
-          <p>If a celebrity with 150 million followers posts, and we try to push that post into the pre-computed Redis news feeds of every follower (an architecture called <strong>Fan-out on Write</strong>), it will take 40 hours of background processing. By the time the last person gets the post, it's two days old.</p>
-          <p><strong>The Hybrid Solution:</strong> Normal users use Fan-out on Write (pushing directly to followers' caches). Celebrities use <strong>Fan-out on Read</strong>. When a celebrity posts, it is written to a single location (their Outbox). When you open the app, your backend does a lightning-fast memory merge of your normal pre-computed feed + the Outboxes of the few celebrities you follow.</p>
+          <h4>The Justin Bieber Problem (Fan-out)</h4>
+          <p>If Elon Musk tweets, and we try to push that tweet into the pre-computed Redis news feeds of his 150 million followers (an architecture called <strong>Fan-out on Write</strong>), it will take 40 hours of background processing. By the time the last person gets the tweet, it's two days old.</p>
+          <p><strong>The Hybrid Solution:</strong> Normal users use Fan-out on Write (pushing directly to followers' caches). Celebrities use <strong>Fan-out on Read</strong>. When a celebrity tweets, it is written to a single location (their Outbox). When you open the app, your backend does a lightning-fast memory merge of your normal pre-computed feed + the Outboxes of the few celebrities you follow.</p>
         </aside>
       </section>
 
