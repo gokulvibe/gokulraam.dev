@@ -38,6 +38,26 @@ const likeEvent = '{user_id, video_id, timestamp, action="like"}';
   title="System Design Handbook — Gokul Raam"
   description="A narrative handbook bridging algorithmic intuition with high-scale production architecture: Top K, sliding windows, write-behind caches, leaderboards, LRU/LFU, tries, k-way merge, geohashing, Bloom filters and HyperLogLog."
 >
+  <script is:inline>
+    // Apply saved view before paint so there's no flash of the wrong layout.
+    (function () {
+      var v = new URLSearchParams(location.search).get('view');
+      if (v !== 'classic' && v !== 'folio') {
+        try { v = localStorage.getItem('sd.view'); } catch (e) {}
+      }
+      document.documentElement.setAttribute('data-sd-view', v === 'classic' ? 'classic' : 'folio');
+    })();
+  </script>
+
+  <div class="sd-switch" role="group" aria-label="Page style">
+    <button type="button" data-sd-set="folio" class="sd-switch__btn">folio</button>
+    <button type="button" data-sd-set="classic" class="sd-switch__btn">classic</button>
+  </div>
+
+  <div class="sd-classic" aria-label="System Design Handbook — classic view">
+    <iframe title="System Design Handbook (classic)" data-src="/system-design-classic.html" loading="eager"></iframe>
+  </div>
+
   <article class="sd">
     <header class="mb-12">
       <div class="label mb-4">// system design</div>
@@ -380,6 +400,41 @@ Player A is mathematically higher!</code></pre>
 </Base>
 
 <script>
+  // ─── folio ⇄ classic switch ─────────────────────────────
+  // Classic = the original handbook HTML, served verbatim from /public and
+  // shown in a same-origin iframe sized to its content.
+  const root = document.documentElement;
+  const frame = document.querySelector<HTMLIFrameElement>('.sd-classic iframe')!;
+  let ro: ResizeObserver | null = null;
+
+  function fitFrame() {
+    const doc = frame.contentDocument;
+    if (!doc?.documentElement) return;
+    frame.style.height = doc.documentElement.scrollHeight + 'px';
+  }
+  frame.addEventListener('load', () => {
+    fitFrame();
+    ro?.disconnect();
+    ro = new ResizeObserver(fitFrame);
+    if (frame.contentDocument?.body) ro.observe(frame.contentDocument.body);
+  });
+
+  function applyView(v: 'folio' | 'classic', persist: boolean) {
+    root.setAttribute('data-sd-view', v);
+    if (v === 'classic' && !frame.getAttribute('src')) frame.src = frame.dataset.src!;
+    document.querySelectorAll<HTMLButtonElement>('[data-sd-set]').forEach((b) =>
+      b.setAttribute('aria-pressed', String(b.dataset.sdSet === v)),
+    );
+    if (persist) {
+      try { localStorage.setItem('sd.view', v); } catch {}
+    }
+  }
+  document.querySelectorAll<HTMLButtonElement>('[data-sd-set]').forEach((b) =>
+    b.addEventListener('click', () => applyView(b.dataset.sdSet as 'folio' | 'classic', true)),
+  );
+  applyView(root.getAttribute('data-sd-view') === 'classic' ? 'classic' : 'folio', false);
+  window.addEventListener('resize', fitFrame);
+
   // Mermaid is ~heavy, so load it only on this page and only when a diagram exists.
   // Theme is derived from the site's CSS tokens and re-rendered on theme toggle.
   const figures = Array.from(document.querySelectorAll<HTMLElement>('.sd-diagram[data-mermaid]'));
@@ -434,6 +489,37 @@ Player A is mathematically higher!</code></pre>
 
 <style>
   .sd { max-width: 72ch; }
+
+  /* ─── folio ⇄ classic switch ───────────────── */
+  .sd-switch {
+    display: inline-flex;
+    margin-bottom: 2rem;
+    border: 1px solid var(--c-rule-strong);
+    border-radius: 999px;
+    padding: 3px;
+    font-family: theme('fontFamily.mono');
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+  }
+  .sd-switch__btn {
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    color: var(--c-text-muted);
+    transition: color 0.2s, background 0.2s;
+  }
+  .sd-switch__btn:hover { color: var(--c-text); }
+  .sd-switch__btn[aria-pressed='true'] { background: var(--c-accent); color: var(--c-bg); }
+
+  .sd-classic { display: none; }
+  :global(html[data-sd-view='classic']) .sd { display: none; }
+  :global(html[data-sd-view='classic']) .sd-classic {
+    display: block;
+    /* full-bleed: break out of Base's max-w-6xl container */
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+  }
+  .sd-classic iframe { display: block; width: 100%; height: 100vh; border: 0; background: #f8fafc; }
 
   .sd-lede {
     max-width: 58ch;
